@@ -2,23 +2,41 @@
   "name": "diff-calculator",
   "version": "1.0.0",
   "description": "Github Action and npm CLI for comment, whitespace ignorable diff checker",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint .",
+    "build:cli": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js",
+    "build:action": "esbuild src/action.ts --bundle --platform=node --outfile=dist/action.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "bin": {
+    "calcdiff": "dist/cli.js"
+  },
+  "keywords": [
+    "diff",
+    "comment",
+    "whitespace",
+    "ignorable",
+    "checker",
+    "calculator",
+    "git"
+  ],
+  "author": "haenah",
+  "license": "MIT",
   "devDependencies": {
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
     "@eslint/js": "^9.8.0",
-    "@swc/cli": "^0.4.0",
-    "@swc/core": "^1.7.6",
+    "@types/node": "^22.1.0",
+    "@types/yargs": "^17.0.32",
+    "esbuild": "^0.23.0",
     "eslint": "9.x",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-unused-imports": "^4.0.1",
+    "gitdiff-parser": "^0.3.1",
     "globals": "^15.9.0",
-    "typescript-eslint": "^8.0.1"
+    "minimatch": "^10.0.1",
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^8.0.1",
+    "yargs": "^17.7.2"
   }
 }

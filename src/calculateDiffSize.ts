@@ -1,0 +1,97 @@
+import { exec } from "child_process";
+import fs from "fs";
+import path from "path";
+
+import gitDiffParser from "gitdiff-parser";
+import { minimatch } from "minimatch";
+
+import { dim, info, success } from "./shellUtils.js";
+
+export type CalculateDiffSizeOptions = {
+  log?: NodeJS.WriteStream;
+  verbose?: boolean;
+  sourceBranch: string;
+  targetBranch: string;
+  directoryOfIgnoreFile: string;
+};
+
+export async function calculateDiffSize({
+  log,
+  verbose,
+  sourceBranch,
+  targetBranch,
+  directoryOfIgnoreFile,
+}: CalculateDiffSizeOptions) {
+  // 제외될 파일 계산
+  const ignoreFileGlobs = fs
+    .readFileSync(path.join(directoryOfIgnoreFile, ".gitdiffignore"), "utf-8")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !line.startsWith("#"));
+
+  const diff: string = await new Promise((resolve, reject) => {
+    exec(`git diff ${targetBranch}...${sourceBranch} -w`, (err, stdout) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(stdout);
+    });
+  });
+  const files = gitDiffParser.parse(diff).filter((file) => {
+    if (file.isBinary) return false;
+    if (file.type === "delete") return false;
+    if (ignoreFileGlobs.some((pattern) => minimatch(file.newPath, pattern)))
+      return false;
+    return true;
+  });
+
+  // 추가된 줄 수 계산
+  let diffs = 0;
+  for (const file of files) {
+    const linesToPrint = [];
+    let lines = 0;
+    for (const hunk of file.hunks) {
+      let multilineComment = false;
+      for (const change of hunk.changes) {
+        if (change.type !== "insert") {
+          if (change.type === "normal") {
+            if (log) linesToPrint.push(dim(change.content));
+          }
+          continue;
+        }
+        const content = change.content.trim();
+        if (!content) {
+          if (log) linesToPrint.push(dim(change.content));
+          continue;
+        }
+        // 여러 줄짜리 주석 제외
+        if (content.startsWith("/*")) multilineComment = true;
+        if (change.content.endsWith("*/")) {
+          if (log) linesToPrint.push(dim(change.content));
+          multilineComment = false;
+          continue;
+        }
+        if (multilineComment) {
+          if (log) linesToPrint.push(dim(change.content));
+          continue;
+        }
+        // 단일 주석 제외
+        if (content.startsWith("//") || content.startsWith("#")) {
+          if (log) linesToPrint.push(dim(change.content));
+          continue;
+        }
+        if (log) linesToPrint.push(success(change.content));
+        lines++;
+      }
+    }
+    diffs += lines;
+    if (log) {
+      log.write(info(`📄 ${file.newPath} ${success(`+${lines}`)}\n`));
+      if (verbose) log.write(linesToPrint.join("\n"));
+      log.write("\n\n");
+    }
+  }
+  return diffs;
+}
