@@ -4,8 +4,8 @@
   "description": "Github Action and npm CLI for comment, whitespace ignorable diff checker",
   "scripts": {
     "lint": "eslint .",
-    "build:cli": "esbuild src/cli.ts --bundle --minify --platform=node --outfile=dist/cli.js --target=node20",
-    "build:action": "esbuild src/action.ts --bundle --minify --platform=node --outfile=dist/action.js --target=node20"
+    "build:cli": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js --target=node20",
+    "build:action": "esbuild src/action.ts --bundle --platform=node --outfile=dist/action.js --target=node20"
   },
   "bin": {
     "calcdiff": "dist/cli.js"

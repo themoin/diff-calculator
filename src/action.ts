@@ -1,4 +1,4 @@
-import core from "@actions/core";
+import * as core from "@actions/core";
 import { calculateDiffSize } from "./calculateDiffSize";
 
 async function main() {
@@ -31,7 +31,7 @@ async function main() {
     core.setOutput("size", size);
   } catch (error) {
     if (error instanceof Error) {
-      core.setFailed(error.message);
+      core.setFailed(error);
     } else {
       core.setFailed("An unknown error occurred.");
     }
