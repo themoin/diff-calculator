@@ -48,7 +48,7 @@ yargs(hideBin(process.argv))
         source: argv.sourceBranch,
         target: argv.targetBranch!,
         directoryOfIgnoreFile: argv.directoryOfIgnoreFile,
-        log: argv.quiet ? undefined : process.stdout,
+        log: argv.quiet ? undefined : console.log,
         verbose: argv.verbose,
       });
       if (argv.quiet) {

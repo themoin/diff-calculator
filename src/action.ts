@@ -12,7 +12,7 @@ async function main() {
       trimWhitespace: true,
     });
     const directoryOfIgnoreFile =
-      core.getInput("ignore-file-directory", {
+      core.getInput("gitdiffignore-directory", {
         required: false,
         trimWhitespace: true,
       }) || ".";
@@ -22,6 +22,7 @@ async function main() {
         trimWhitespace: true,
       }) === "true";
     const size = await calculateDiffSize({
+      log: core.info,
       source,
       target,
       directoryOfIgnoreFile,

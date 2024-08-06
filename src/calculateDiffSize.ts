@@ -8,7 +8,7 @@ import { minimatch } from "minimatch";
 import { dim, info, success } from "./shellUtils.js";
 
 export type CalculateDiffSizeOptions = {
-  log?: NodeJS.WriteStream;
+  log?: (message: string) => void;
   verbose?: boolean;
   source: string;
   target: string;
@@ -23,13 +23,16 @@ export async function calculateDiffSize({
   directoryOfIgnoreFile,
 }: CalculateDiffSizeOptions) {
   // 제외될 파일 계산
-  const ignoreFileGlobs = fs
-    .readFileSync(path.join(directoryOfIgnoreFile, ".gitdiffignore"), "utf-8")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .filter((line) => !line.startsWith("#"));
-
+  const gitDiffIgnorePath = path.join(directoryOfIgnoreFile, ".gitdiffignore");
+  let ignoreFileGlobs: string[] = [];
+  if (fs.existsSync(gitDiffIgnorePath)) {
+    ignoreFileGlobs = fs
+      .readFileSync(path.join(directoryOfIgnoreFile, ".gitdiffignore"), "utf-8")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .filter((line) => !line.startsWith("#"));
+  }
   const diff: string = await new Promise((resolve, reject) => {
     exec(`git diff ${target}...${source} -w`, (err, stdout) => {
       if (err) {
@@ -88,9 +91,9 @@ export async function calculateDiffSize({
     }
     diffs += lines;
     if (log) {
-      log.write(info(`📄 ${file.newPath} ${success(`+${lines}`)}\n`));
-      if (verbose) log.write(linesToPrint.join("\n"));
-      log.write("\n\n");
+      log(info(`📄 ${file.newPath} ${success(`+${lines}`)}`));
+      if (verbose) log(linesToPrint.join("\n"));
+      log("\n");
     }
   }
   return diffs;
