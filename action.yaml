@@ -14,6 +14,11 @@ inputs:
   verbose:
     description: "Print the diff"
     required: false
+    default: "false"
+  ignore-deletion:
+    description: "Whether to ignore deleted lines"
+    required: false
+    default: "false"
 outputs:
   size:
     description: "The size of the diff between the source branch and the target branch"

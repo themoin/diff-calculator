@@ -30,6 +30,12 @@ yargs(hideBin(process.argv))
       "실패로 간주할 추가된 line 수. 0 입력시 실패로 간주하지 않습니다.",
     type: "number",
   })
+  .option("ignoreDeletion", {
+    alias: "i",
+    default: false,
+    description: "삭제된 변경사항을 제외합니다.",
+    type: "boolean",
+  })
   .positional("targetBranch", {
     description: "기준 브랜치",
     type: "string",
@@ -50,6 +56,7 @@ yargs(hideBin(process.argv))
         directoryOfIgnoreFile: argv.directoryOfIgnoreFile,
         log: argv.quiet ? undefined : console.log,
         verbose: argv.verbose,
+        ignoreDeletion: argv.ignoreDeletion,
       });
       if (argv.quiet) {
         console.log(diffs);

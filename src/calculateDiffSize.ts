@@ -5,14 +5,15 @@ import path from "path";
 import gitDiffParser from "gitdiff-parser";
 import { minimatch } from "minimatch";
 
-import { dim, info, success } from "./shellUtils.js";
+import { dim, error, info, success } from "./shellUtils.js";
 
 export type CalculateDiffSizeOptions = {
   log?: (message: string) => void;
-  verbose?: boolean;
+  verbose: boolean;
   source: string;
   target: string;
   directoryOfIgnoreFile: string;
+  ignoreDeletion: boolean;
 };
 
 export async function calculateDiffSize({
@@ -20,6 +21,7 @@ export async function calculateDiffSize({
   verbose,
   source,
   target,
+  ignoreDeletion,
   directoryOfIgnoreFile,
 }: CalculateDiffSizeOptions) {
   // 제외될 파일 계산
@@ -44,7 +46,7 @@ export async function calculateDiffSize({
   });
   const files = gitDiffParser.parse(diff).filter((file) => {
     if (file.isBinary) return false;
-    if (file.type === "delete") return false;
+    if (ignoreDeletion && file.type === "delete") return false;
     if (ignoreFileGlobs.some((pattern) => minimatch(file.newPath, pattern)))
       return false;
     return true;
@@ -58,11 +60,14 @@ export async function calculateDiffSize({
     for (const hunk of file.hunks) {
       let multilineComment = false;
       for (const change of hunk.changes) {
-        if (change.type !== "insert") {
-          if (change.type === "normal") {
+        switch (change.type) {
+          case "delete":
+            if (ignoreDeletion) continue;
+            if (log) linesToPrint.push(error(change.content));
+            break;
+          case "normal":
             if (log) linesToPrint.push(dim(change.content));
-          }
-          continue;
+            continue;
         }
         const content = change.content.trim();
         if (!content) {

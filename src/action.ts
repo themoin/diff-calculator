@@ -21,12 +21,18 @@ async function main() {
         required: false,
         trimWhitespace: true,
       }) === "true";
+    const ignoreDeletion =
+      core.getInput("ignore-deletion", {
+        required: false,
+        trimWhitespace: true,
+      }) === "true";
     const size = await calculateDiffSize({
       log: core.info,
       source,
       target,
       directoryOfIgnoreFile,
       verbose,
+      ignoreDeletion,
     });
     core.setOutput("size", size);
   } catch (error) {

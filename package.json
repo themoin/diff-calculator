@@ -1,11 +1,16 @@
 {
   "name": "diff-calculator",
   "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/themoin/diff-calculator.git"
+  },
   "description": "Github Action and npm CLI for comment, whitespace ignorable diff checker",
   "scripts": {
     "lint": "eslint .",
     "build:cli": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js --target=node20",
-    "build:action": "esbuild src/action.ts --bundle --platform=node --outfile=dist/action.js --target=node20"
+    "build:action": "esbuild src/action.ts --bundle --platform=node --outfile=dist/action.js --target=node20",
+    "build": "pnpm run build:cli && pnpm run build:action"
   },
   "bin": {
     "calcdiff": "dist/cli.js"
