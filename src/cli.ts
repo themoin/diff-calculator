@@ -45,8 +45,8 @@ yargs(hideBin(process.argv))
     () => {},
     async (argv) => {
       const diffs = await calculateDiffSize({
-        sourceBranch: argv.sourceBranch,
-        targetBranch: argv.targetBranch!,
+        source: argv.sourceBranch,
+        target: argv.targetBranch!,
         directoryOfIgnoreFile: argv.directoryOfIgnoreFile,
         log: argv.quiet ? undefined : process.stdout,
         verbose: argv.verbose,

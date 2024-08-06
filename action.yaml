@@ -1,0 +1,22 @@
+name: "Get Diff Size"
+description: "Get the size of the diff between the source branch and the target branch"
+inputs:
+  source:
+    description: "The source branch"
+    required: true
+  target:
+    description: "The target branch"
+    required: true
+  ignore-file-directory:
+    description: "The directory of .gitdiffignore file"
+    required: false
+    default: "."
+  verbose:
+    description: "Print the diff"
+    required: false
+outputs:
+  size:
+    description: "The size of the diff between the source branch and the target branch"
+runs:
+  using: "node20"
+  main: "dist/action.js"

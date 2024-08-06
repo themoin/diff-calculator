@@ -10,16 +10,16 @@ import { dim, info, success } from "./shellUtils.js";
 export type CalculateDiffSizeOptions = {
   log?: NodeJS.WriteStream;
   verbose?: boolean;
-  sourceBranch: string;
-  targetBranch: string;
+  source: string;
+  target: string;
   directoryOfIgnoreFile: string;
 };
 
 export async function calculateDiffSize({
   log,
   verbose,
-  sourceBranch,
-  targetBranch,
+  source,
+  target,
   directoryOfIgnoreFile,
 }: CalculateDiffSizeOptions) {
   // 제외될 파일 계산
@@ -31,7 +31,7 @@ export async function calculateDiffSize({
     .filter((line) => !line.startsWith("#"));
 
   const diff: string = await new Promise((resolve, reject) => {
-    exec(`git diff ${targetBranch}...${sourceBranch} -w`, (err, stdout) => {
+    exec(`git diff ${target}...${source} -w`, (err, stdout) => {
       if (err) {
         reject(err);
         return;
