@@ -7,10 +7,9 @@ inputs:
   target:
     description: "The target branch"
     required: true
-  gitdiffignore-directory:
-    description: "The directory of .gitdiffignore file"
+  ignore-file-path:
+    description: "The file path of what files to ignore. If not provided, the .gitdiffignore file in the root of the repository will be used"
     required: false
-    default: "."
   verbose:
     description: "Print the diff"
     required: false

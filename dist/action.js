@@ -20740,12 +20740,11 @@ async function calculateDiffSize({
   source,
   target,
   ignoreDeletion,
-  directoryOfIgnoreFile
+  ignoreFilePath = import_path.default.join(process.cwd(), ".gitdiffignore")
 }) {
-  const gitDiffIgnorePath = import_path.default.join(directoryOfIgnoreFile, ".gitdiffignore");
   let ignoreFileGlobs = [];
-  if (import_fs.default.existsSync(gitDiffIgnorePath)) {
-    ignoreFileGlobs = import_fs.default.readFileSync(import_path.default.join(directoryOfIgnoreFile, ".gitdiffignore"), "utf-8").split("\n").map((line) => line.trim()).filter(Boolean).filter((line) => !line.startsWith("#"));
+  if (import_fs.default.existsSync(ignoreFilePath)) {
+    ignoreFileGlobs = import_fs.default.readFileSync(ignoreFilePath, "utf-8").split("\n").map((line) => line.trim()).filter(Boolean).filter((line) => !line.startsWith("#"));
   }
   const diff = await new Promise((resolve, reject) => {
     (0, import_child_process.exec)(`git diff ${target}...${source} -w`, (err, stdout) => {
@@ -20823,10 +20822,10 @@ async function main() {
       required: true,
       trimWhitespace: true
     });
-    const directoryOfIgnoreFile = core.getInput("gitdiffignore-directory", {
+    const ignoreFilePath = core.getInput("gitdiffignore-directory", {
       required: false,
       trimWhitespace: true
-    }) || ".";
+    }) || void 0;
     const verbose = core.getInput("verbose", {
       required: false,
       trimWhitespace: true
@@ -20839,7 +20838,7 @@ async function main() {
       log: core.info,
       source,
       target,
-      directoryOfIgnoreFile,
+      ignoreFilePath,
       verbose,
       ignoreDeletion
     });

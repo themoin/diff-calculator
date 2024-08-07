@@ -12,7 +12,7 @@ export type CalculateDiffSizeOptions = {
   verbose: boolean;
   source: string;
   target: string;
-  directoryOfIgnoreFile: string;
+  ignoreFilePath?: string;
   ignoreDeletion: boolean;
 };
 
@@ -22,14 +22,13 @@ export async function calculateDiffSize({
   source,
   target,
   ignoreDeletion,
-  directoryOfIgnoreFile,
+  ignoreFilePath = path.join(process.cwd(), ".gitdiffignore"),
 }: CalculateDiffSizeOptions) {
   // 제외될 파일 계산
-  const gitDiffIgnorePath = path.join(directoryOfIgnoreFile, ".gitdiffignore");
   let ignoreFileGlobs: string[] = [];
-  if (fs.existsSync(gitDiffIgnorePath)) {
+  if (fs.existsSync(ignoreFilePath)) {
     ignoreFileGlobs = fs
-      .readFileSync(path.join(directoryOfIgnoreFile, ".gitdiffignore"), "utf-8")
+      .readFileSync(ignoreFilePath, "utf-8")
       .split("\n")
       .map((line) => line.trim())
       .filter(Boolean)

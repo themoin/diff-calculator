@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { calculateDiffSize } from "./calculateDiffSize";
@@ -17,10 +18,11 @@ yargs(hideBin(process.argv))
     description: "변경사항을 자세히 출력합니다.",
     type: "boolean",
   })
-  .option("directoryOfIgnoreFile", {
-    alias: "d",
-    default: ".",
-    description: ".gitdiffignore 파일이 위치한 디렉토리",
+  .option("ignoreFilePath", {
+    alias: "f",
+    required: false,
+    description:
+      "ignore 파일이 위치한 경로. 없을 경우 루트 디렉토리의 .gitdiffignore를 사용합니다.",
     type: "string",
   })
   .option("maxDiff", {
@@ -31,7 +33,7 @@ yargs(hideBin(process.argv))
     type: "number",
   })
   .option("ignoreDeletion", {
-    alias: "i",
+    alias: "d",
     default: false,
     description: "삭제된 변경사항을 제외합니다.",
     type: "boolean",
@@ -53,7 +55,7 @@ yargs(hideBin(process.argv))
       const diffs = await calculateDiffSize({
         source: argv.sourceBranch,
         target: argv.targetBranch!,
-        directoryOfIgnoreFile: argv.directoryOfIgnoreFile,
+        ignoreFilePath: argv.ignoreFilePath,
         log: argv.quiet ? undefined : console.log,
         verbose: argv.verbose,
         ignoreDeletion: argv.ignoreDeletion,

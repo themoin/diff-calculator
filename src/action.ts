@@ -11,11 +11,11 @@ async function main() {
       required: true,
       trimWhitespace: true,
     });
-    const directoryOfIgnoreFile =
+    const ignoreFilePath =
       core.getInput("gitdiffignore-directory", {
         required: false,
         trimWhitespace: true,
-      }) || ".";
+      }) || undefined;
     const verbose =
       core.getInput("verbose", {
         required: false,
@@ -30,7 +30,7 @@ async function main() {
       log: core.info,
       source,
       target,
-      directoryOfIgnoreFile,
+      ignoreFilePath,
       verbose,
       ignoreDeletion,
     });
