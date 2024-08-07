@@ -37,20 +37,22 @@ export async function calculateDiffSize({
       .filter((line) => !line.startsWith("#"));
   }
   const diff: string = await new Promise((resolve, reject) => {
-    exec(
-      `git diff ${target}...${source} ${ignoreWhitespace ? "-w" : ""}`,
-      (err, stdout) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(stdout);
-      },
-    );
+    const execArgs = ["git diff"];
+    execArgs.push(`${target}...${source}`);
+    if (ignoreWhitespace) execArgs.push("-w");
+    if (ignoreDeletion) execArgs.push("--diff-filter=ACMR");
+    if (ignoreFileGlobs.length)
+      execArgs.push(...ignoreFileGlobs.map((pattern) => `":!${pattern}"`));
+    exec(execArgs.join(" "), (err, stdout) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(stdout);
+    });
   });
   const files = gitDiffParser.parse(diff).filter((file) => {
     if (file.isBinary) return false;
-    if (ignoreDeletion && file.type === "delete") return false;
     if (ignoreFileGlobs.some((pattern) => minimatch(file.newPath, pattern)))
       return false;
     return true;

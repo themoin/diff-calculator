@@ -9,11 +9,7 @@ export default [
   { files: ["**/*.{js,mjs,cjs,ts}"] },
   { files: ["**/*.js"], languageOptions: { sourceType: "" } },
   { languageOptions: { globals: globals.browser } },
-  {
-    plugins: {
-      "unused-imports": eslintPluginUnusedImports,
-    },
-  },
+  { plugins: { "unused-imports": eslintPluginUnusedImports } },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   eslintPluginPrettierRecommended,
