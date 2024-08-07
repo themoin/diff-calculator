@@ -26,6 +26,11 @@ async function main() {
         required: false,
         trimWhitespace: true,
       }) === "true";
+    const ignoreWhitespace =
+      core.getInput("ignore-whitespace", {
+        required: false,
+        trimWhitespace: true,
+      }) === "true";
     const size = await calculateDiffSize({
       log: core.info,
       source,
@@ -33,6 +38,7 @@ async function main() {
       ignoreFilePath,
       verbose,
       ignoreDeletion,
+      ignoreWhitespace,
     });
     core.setOutput("size", size);
   } catch (error) {

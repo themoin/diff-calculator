@@ -2,20 +2,24 @@ name: "Get Diff Size"
 description: "Get the size of the diff between the source branch and the target branch"
 inputs:
   source:
-    description: "The source branch"
+    description: "The source branch. It must be fetched before running this action"
     required: true
   target:
-    description: "The target branch"
+    description: "The target branch. It must be fetched before running this action"
     required: true
+  ignore-deletion:
+    description: "Whether to ignore deleted lines"
+    required: false
+    default: "false"
+  ignore-whitespace:
+    description: "Whether to ignore white space"
+    required: false
+    default: "false"
   ignore-file-path:
     description: "The file path of what files to ignore. If not provided, the .gitdiffignore file in the root of the repository will be used"
     required: false
   verbose:
     description: "Print the diff"
-    required: false
-    default: "false"
-  ignore-deletion:
-    description: "Whether to ignore deleted lines"
     required: false
     default: "false"
 outputs:

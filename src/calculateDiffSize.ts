@@ -14,6 +14,7 @@ export type CalculateDiffSizeOptions = {
   target: string;
   ignoreFilePath?: string;
   ignoreDeletion: boolean;
+  ignoreWhitespace: boolean;
 };
 
 export async function calculateDiffSize({
@@ -23,6 +24,7 @@ export async function calculateDiffSize({
   target,
   ignoreDeletion,
   ignoreFilePath = path.join(process.cwd(), ".gitdiffignore"),
+  ignoreWhitespace,
 }: CalculateDiffSizeOptions) {
   // 제외될 파일 계산
   let ignoreFileGlobs: string[] = [];
@@ -35,13 +37,16 @@ export async function calculateDiffSize({
       .filter((line) => !line.startsWith("#"));
   }
   const diff: string = await new Promise((resolve, reject) => {
-    exec(`git diff ${target}...${source} -w`, (err, stdout) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve(stdout);
-    });
+    exec(
+      `git diff ${target}...${source} ${ignoreWhitespace ? "-w" : ""}`,
+      (err, stdout) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(stdout);
+      },
+    );
   });
   const files = gitDiffParser.parse(diff).filter((file) => {
     if (file.isBinary) return false;
@@ -71,7 +76,7 @@ export async function calculateDiffSize({
         const content = change.content.trim();
         if (!content) {
           if (log) linesToPrint.push(dim(change.content));
-          continue;
+          if (ignoreWhitespace) continue;
         }
         // 여러 줄짜리 주석 제외
         if (content.startsWith("/*")) multilineComment = true;
@@ -96,8 +101,10 @@ export async function calculateDiffSize({
     diffs += lines;
     if (log) {
       log(info(`📄 ${file.newPath} ${success(`+${lines}`)}`));
-      if (verbose) log(linesToPrint.join("\n"));
-      log("\n");
+      if (verbose) {
+        log(linesToPrint.join("\n"));
+        log("");
+      }
     }
   }
   return diffs;

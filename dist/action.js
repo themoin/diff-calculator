@@ -20740,20 +20740,24 @@ async function calculateDiffSize({
   source,
   target,
   ignoreDeletion,
-  ignoreFilePath = import_path.default.join(process.cwd(), ".gitdiffignore")
+  ignoreFilePath = import_path.default.join(process.cwd(), ".gitdiffignore"),
+  ignoreWhitespace
 }) {
   let ignoreFileGlobs = [];
   if (import_fs.default.existsSync(ignoreFilePath)) {
     ignoreFileGlobs = import_fs.default.readFileSync(ignoreFilePath, "utf-8").split("\n").map((line) => line.trim()).filter(Boolean).filter((line) => !line.startsWith("#"));
   }
   const diff = await new Promise((resolve, reject) => {
-    (0, import_child_process.exec)(`git diff ${target}...${source} -w`, (err, stdout) => {
-      if (err) {
-        reject(err);
-        return;
+    (0, import_child_process.exec)(
+      `git diff ${target}...${source} ${ignoreWhitespace ? "-w" : ""}`,
+      (err, stdout) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(stdout);
       }
-      resolve(stdout);
-    });
+    );
   });
   const files = import_gitdiff_parser.default.parse(diff).filter((file) => {
     if (file.isBinary) return false;
@@ -20781,7 +20785,7 @@ async function calculateDiffSize({
         const content = change.content.trim();
         if (!content) {
           if (log) linesToPrint.push(dim(change.content));
-          continue;
+          if (ignoreWhitespace) continue;
         }
         if (content.startsWith("/*")) multilineComment = true;
         if (change.content.endsWith("*/")) {
@@ -20804,8 +20808,10 @@ async function calculateDiffSize({
     diffs += lines;
     if (log) {
       log(info(`\u{1F4C4} ${file.newPath} ${success(`+${lines}`)}`));
-      if (verbose) log(linesToPrint.join("\n"));
-      log("\n");
+      if (verbose) {
+        log(linesToPrint.join("\n"));
+        log("");
+      }
     }
   }
   return diffs;
@@ -20834,13 +20840,18 @@ async function main() {
       required: false,
       trimWhitespace: true
     }) === "true";
+    const ignoreWhitespace = core.getInput("ignore-whitespace", {
+      required: false,
+      trimWhitespace: true
+    }) === "true";
     const size = await calculateDiffSize({
       log: core.info,
       source,
       target,
       ignoreFilePath,
       verbose,
-      ignoreDeletion
+      ignoreDeletion,
+      ignoreWhitespace
     });
     core.setOutput("size", size);
   } catch (error2) {
