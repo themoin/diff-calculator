@@ -15,6 +15,10 @@ inputs:
     description: "Whether to ignore white space"
     required: false
     default: "false"
+  ignore-comment:
+    description: "Whether to ignore comments. ignore-deletion must be set to true"
+    required: false
+    default: "false"
   ignore-file-path:
     description: "The file path of what files to ignore. If not provided, the .gitdiffignore file in the root of the repository will be used"
     required: false

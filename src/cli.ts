@@ -34,6 +34,12 @@ yargs(hideBin(process.argv))
     description: "공백을 무시합니다.",
     type: "boolean",
   })
+  .option("ignoreComment", {
+    alias: "c",
+    default: false,
+    description: "주석을 무시합니다. ignoreDeletion이 활성화되어야 합니다.",
+    type: "boolean",
+  })
   .option("verbose", {
     alias: "v",
     default: false,
@@ -66,6 +72,7 @@ yargs(hideBin(process.argv))
         verbose: argv.verbose,
         ignoreDeletion: argv.ignoreDeletion,
         ignoreWhitespace: argv.ignoreWhitespace,
+        ignoreComment: argv.ignoreComment,
       });
       if (argv.quiet) {
         console.log(diffs);

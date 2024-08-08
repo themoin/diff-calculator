@@ -16,6 +16,7 @@ export type CalculateDiffSizeOptions = {
   ignoreFilePath?: string;
   ignoreDeletion: boolean;
   ignoreWhitespace: boolean;
+  ignoreComment: boolean;
 };
 
 export async function calculateDiffSize({
@@ -26,6 +27,7 @@ export async function calculateDiffSize({
   ignoreDeletion,
   ignoreFilePath = path.join(process.cwd(), ".gitdiffignore"),
   ignoreWhitespace,
+  ignoreComment,
 }: CalculateDiffSizeOptions) {
   // 제외될 파일 계산
   let ignoreFileGlobs: string[] = [];
@@ -62,7 +64,8 @@ export async function calculateDiffSize({
   // 추가된 줄 수 계산
   let diffs = 0;
   for (const file of files) {
-    const commentChecker = new CommentChecker(file.newPath);
+    const commentChecker =
+      ignoreDeletion && ignoreComment ? new CommentChecker(file.newPath) : null;
     const linesToPrint = [];
     let insertion = 0;
     let deletion = 0;
@@ -94,7 +97,7 @@ export async function calculateDiffSize({
           if (ignoreWhitespace) continue;
         }
         if (
-          ignoreDeletion &&
+          commentChecker &&
           !commentChecker.check(change.lineNumber, content)
         ) {
           linesToPrint.push(dim(change.content));

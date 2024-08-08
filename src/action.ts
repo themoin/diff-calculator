@@ -31,6 +31,11 @@ async function main() {
         required: false,
         trimWhitespace: true,
       }) === "true";
+    const ignoreComment =
+      core.getInput("ignore-comment", {
+        required: false,
+        trimWhitespace: true,
+      }) === "true";
     const size = await calculateDiffSize({
       log: core.info,
       source,
@@ -39,6 +44,7 @@ async function main() {
       verbose,
       ignoreDeletion,
       ignoreWhitespace,
+      ignoreComment,
     });
     core.setOutput("size", size);
   } catch (error) {
