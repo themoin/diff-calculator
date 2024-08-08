@@ -64,22 +64,23 @@ export async function calculateDiffSize({
   for (const file of files) {
     const commentChecker = new CommentChecker(file.newPath);
     const linesToPrint = [];
-    let lines = 0;
+    let insertion = 0;
+    let deletion = 0;
     for (const hunk of file.hunks) {
       if (verbose)
         linesToPrint.push(
           bold(
             ignoreDeletion
               ? `From line ${hunk.newStart} to ${hunk.newStart + hunk.newLines - 1}`
-              : "",
+              : `From line ${hunk.oldStart} to ${hunk.oldStart + hunk.oldLines - 1} ➡ From line ${hunk.newStart} to ${hunk.newStart + hunk.newLines - 1}`,
           ),
         );
       for (const change of hunk.changes) {
-        let color: typeof error | typeof success = success;
+        let isInsertionOrDeletion = true;
         switch (change.type) {
           case "delete":
             if (ignoreDeletion) continue;
-            color = error;
+            isInsertionOrDeletion = false;
             break;
           case "normal":
             linesToPrint.push(dim(change.content)); /*
@@ -99,13 +100,22 @@ export async function calculateDiffSize({
           linesToPrint.push(dim(change.content));
           continue;
         }
-        linesToPrint.push(color(change.content));
-        lines++;
+        linesToPrint.push(
+          (isInsertionOrDeletion ? success : error)(change.content),
+        );
+        if (isInsertionOrDeletion) insertion++;
+        else deletion++;
       }
     }
-    diffs += lines;
-    if (log && lines > 0) {
-      log(info(bold(`📄 ${file.newPath} ${success(`+${lines}`)}`)));
+    diffs += insertion + deletion;
+    if (log && insertion + deletion) {
+      log(
+        info(
+          bold(
+            `📄 ${file.newPath}${deletion ? error(` -${deletion}`) : ""}${insertion ? success(` +${insertion}`) : ""}`,
+          ),
+        ),
+      );
       if (verbose) {
         log(linesToPrint.join("\n"));
         log("");
