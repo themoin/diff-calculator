@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { calculateDiffSize } from "./calculateDiffSize";
+import { calculateDiffSize } from "../lib/calculateDiffSize";
 import { success } from "./shellUtils";
 
 yargs(hideBin(process.argv))

@@ -4,7 +4,7 @@ import path from "path";
 
 import gitDiffParser from "gitdiff-parser";
 
-import { bold, dim, error, info, success } from "./shellUtils.js";
+import { bold, dim, error, info, success } from "../cli/shellUtils.js";
 import { MultilineCommentChecker } from "./MultilineCommentChecker.js";
 
 export type CalculateDiffSizeOptions = {
