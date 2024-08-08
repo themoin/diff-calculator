@@ -3,7 +3,6 @@ import fs from "fs";
 import path from "path";
 
 import gitDiffParser from "gitdiff-parser";
-import { minimatch } from "minimatch";
 
 import { bold, dim, error, info, success } from "./shellUtils.js";
 import { CommentChecker } from "./CommentChecker.js";
@@ -56,8 +55,6 @@ export async function calculateDiffSize({
   });
   const files = gitDiffParser.parse(diff).filter((file) => {
     if (file.isBinary) return false;
-    if (ignoreFileGlobs.some((pattern) => minimatch(file.newPath, pattern)))
-      return false;
     return true;
   });
 
