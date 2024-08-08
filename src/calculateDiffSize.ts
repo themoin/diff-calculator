@@ -86,9 +86,7 @@ export async function calculateDiffSize({
             isInsertionOrDeletion = false;
             break;
           case "normal":
-            linesToPrint.push(dim(change.content)); /*
-            /*
-            */
+            linesToPrint.push(dim(change.content));
             continue;
         }
         const content = change.content.trim();
