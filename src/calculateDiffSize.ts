@@ -5,7 +5,8 @@ import path from "path";
 import gitDiffParser from "gitdiff-parser";
 import { minimatch } from "minimatch";
 
-import { dim, error, info, success } from "./shellUtils.js";
+import { bold, dim, error, info, success } from "./shellUtils.js";
+import { CommentChecker } from "./CommentChecker.js";
 
 export type CalculateDiffSizeOptions = {
   log?: (message: string) => void;
@@ -61,48 +62,50 @@ export async function calculateDiffSize({
   // 추가된 줄 수 계산
   let diffs = 0;
   for (const file of files) {
+    const commentChecker = new CommentChecker(file.newPath);
     const linesToPrint = [];
     let lines = 0;
     for (const hunk of file.hunks) {
-      let multilineComment = false;
+      if (verbose)
+        linesToPrint.push(
+          bold(
+            ignoreDeletion
+              ? `From line ${hunk.newStart} to ${hunk.newStart + hunk.newLines - 1}`
+              : "",
+          ),
+        );
       for (const change of hunk.changes) {
+        let color: typeof error | typeof success = success;
         switch (change.type) {
           case "delete":
             if (ignoreDeletion) continue;
-            if (log) linesToPrint.push(error(change.content));
+            color = error;
             break;
           case "normal":
-            if (log) linesToPrint.push(dim(change.content));
+            linesToPrint.push(dim(change.content)); /*
+            /*
+            */
             continue;
         }
         const content = change.content.trim();
         if (!content) {
-          if (log) linesToPrint.push(dim(change.content));
+          linesToPrint.push(dim(change.content));
           if (ignoreWhitespace) continue;
         }
-        // 여러 줄짜리 주석 제외
-        if (content.startsWith("/*")) multilineComment = true;
-        if (change.content.endsWith("*/")) {
-          if (log) linesToPrint.push(dim(change.content));
-          multilineComment = false;
+        if (
+          ignoreDeletion &&
+          !commentChecker.check(change.lineNumber, content)
+        ) {
+          linesToPrint.push(dim(change.content));
           continue;
         }
-        if (multilineComment) {
-          if (log) linesToPrint.push(dim(change.content));
-          continue;
-        }
-        // 단일 주석 제외
-        if (content.startsWith("//") || content.startsWith("#")) {
-          if (log) linesToPrint.push(dim(change.content));
-          continue;
-        }
-        if (log) linesToPrint.push(success(change.content));
+        linesToPrint.push(color(change.content));
         lines++;
       }
     }
     diffs += lines;
-    if (log) {
-      log(info(`📄 ${file.newPath} ${success(`+${lines}`)}`));
+    if (log && lines > 0) {
+      log(info(bold(`📄 ${file.newPath} ${success(`+${lines}`)}`)));
       if (verbose) {
         log(linesToPrint.join("\n"));
         log("");
