@@ -1,5 +1,3 @@
-import fs from "fs";
-
 class Range {
   constructor(
     public start: number,
@@ -10,11 +8,11 @@ class Range {
   }
 }
 
-export class CommentChecker {
-  constructor(private path: string) {
+export class MultilineCommentChecker {
+  constructor(fileContent: string) {
     this.multilineCommentRanges = [];
-    const file = fs.readFileSync(this.path).toString().split("\n");
     let start: number | null = null;
+    const file = fileContent.split("\n");
     for (let i = 0; i < file.length; i++) {
       const trimmed = file[i].trim();
       if (start === null) {
@@ -44,16 +42,7 @@ export class CommentChecker {
     }
   }
   private multilineCommentRanges: Range[];
-  public check(lineNo: number, lineContent: string) {
-    if (this.multilineCommentRanges.some((range) => range.contains(lineNo))) {
-      return false;
-    }
-    if (lineContent.trim().startsWith("//")) {
-      return false;
-    }
-    if (lineContent.trim().startsWith("#")) {
-      return false;
-    }
-    return true;
+  public isComment(lineNo: number) {
+    return this.multilineCommentRanges.some((range) => range.contains(lineNo));
   }
 }

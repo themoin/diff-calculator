@@ -7,18 +7,18 @@ import { success } from "./shellUtils";
 yargs(hideBin(process.argv))
   .positional("sourceBranch", {
     default: "HEAD",
-    description: "The source branch.",
+    description: "The source branch",
     type: "string",
   })
   .positional("targetBranch", {
-    description: "The target branch.",
+    description: "The target branch",
     type: "string",
   })
   .option("ignoreFilePath", {
     alias: "f",
     required: false,
     description:
-      "The file path of what files to ignore. If not provided, the .gitdiffignore file in working directory will be used",
+      "The file path of what files to ignore. If not provided, the .gitdiffignore file in working directory will be used.",
     type: "string",
   })
   .option("ignoreDeletion", {
@@ -36,13 +36,13 @@ yargs(hideBin(process.argv))
   .option("ignoreComment", {
     alias: "c",
     default: false,
-    description: "Whether to ignore comments. ignore-deletion must be set",
+    description: "Whether to ignore comments",
     type: "boolean",
   })
   .option("verbose", {
     alias: "v",
     default: false,
-    description: "Whether to log verbose output",
+    description: "Whether to print diff details",
     type: "boolean",
   })
   .option("quiet", {
@@ -53,7 +53,7 @@ yargs(hideBin(process.argv))
   })
   .command(
     "$0 <targetBranch> [sourceBranch]",
-    "Get the size of the diff between the source branch and the target branch",
+    "Get the size of the diff between the source branch and the target branch.",
     () => {},
     async (argv) => {
       const diffs = await calculateDiffSize({

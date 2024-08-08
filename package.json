@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "build:cli": "esbuild src/cli.ts --minify --bundle --platform=node --outfile=dist/cli.js --target=node20",
     "build:action": "esbuild src/action.ts --minify --bundle --platform=node --outfile=dist/action.js --target=node20",
-    "build": "pnpm run build:cli && pnpm run build:action"
+    "build": "pnpm run build:cli && pnpm run build:action",
+    "build:cli:watch": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js --target=node20 --watch"
   },
   "files": [
     "dist/cli.js"

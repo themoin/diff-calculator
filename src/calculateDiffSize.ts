@@ -5,7 +5,7 @@ import path from "path";
 import gitDiffParser from "gitdiff-parser";
 
 import { bold, dim, error, info, success } from "./shellUtils.js";
-import { CommentChecker } from "./CommentChecker.js";
+import { MultilineCommentChecker } from "./MultilineCommentChecker.js";
 
 export type CalculateDiffSizeOptions = {
   log?: (message: string) => void;
@@ -38,19 +38,25 @@ export async function calculateDiffSize({
       .filter(Boolean)
       .filter((line) => !line.startsWith("#"));
   }
+  const mergeBase: string = await new Promise((resolve, reject) => {
+    const execArgs = ["git merge-base"];
+    execArgs.push(source);
+    execArgs.push(target);
+    exec(execArgs.join(" "), (err, stdout) => {
+      if (err) reject(err);
+      else resolve(stdout.trim());
+    });
+  });
   const diff: string = await new Promise((resolve, reject) => {
     const execArgs = ["git diff"];
-    execArgs.push(`${target}...${source}`);
+    execArgs.push(`${mergeBase}..${source}`);
     if (ignoreWhitespace) execArgs.push("-w");
     if (ignoreDeletion) execArgs.push("--diff-filter=ACMR");
     if (ignoreFileGlobs.length)
       execArgs.push(...ignoreFileGlobs.map((pattern) => `":!${pattern}"`));
     exec(execArgs.join(" "), (err, stdout) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve(stdout);
+      if (err) reject(err);
+      else resolve(stdout);
     });
   });
   const files = gitDiffParser.parse(diff).filter((file) => {
@@ -61,8 +67,30 @@ export async function calculateDiffSize({
   // 추가된 줄 수 계산
   let diffs = 0;
   for (const file of files) {
-    const commentChecker =
-      ignoreDeletion && ignoreComment ? new CommentChecker(file.newPath) : null;
+    const oldFileContent: string | null = await new Promise(
+      (resolve, reject) => {
+        if (file.type === "add") return resolve(null);
+        exec(`git show ${mergeBase}:${file.oldPath}`, (err, stdout) => {
+          if (err) reject(err);
+          else resolve(stdout);
+        });
+      },
+    );
+    const newFileContent: string = await new Promise((resolve, reject) => {
+      if (file.type === "delete") return resolve("");
+      exec(`git show ${source}:${file.newPath}`, (err, stdout) => {
+        if (err) reject(err);
+        else resolve(stdout);
+      });
+    });
+    const oldFileCommentChecker =
+      ignoreComment && oldFileContent
+        ? new MultilineCommentChecker(oldFileContent)
+        : undefined;
+    const newFileCommentChecker =
+      ignoreComment && newFileContent
+        ? new MultilineCommentChecker(newFileContent)
+        : undefined;
     const linesToPrint = [];
     let insertion = 0;
     let deletion = 0;
@@ -76,11 +104,9 @@ export async function calculateDiffSize({
           ),
         );
       for (const change of hunk.changes) {
-        let isInsertionOrDeletion = true;
         switch (change.type) {
           case "delete":
             if (ignoreDeletion) continue;
-            isInsertionOrDeletion = false;
             break;
           case "normal":
             linesToPrint.push(dim(change.content));
@@ -91,18 +117,30 @@ export async function calculateDiffSize({
           linesToPrint.push(dim(change.content));
           if (ignoreWhitespace) continue;
         }
-        if (
-          commentChecker &&
-          !commentChecker.check(change.lineNumber, content)
-        ) {
-          linesToPrint.push(dim(change.content));
-          continue;
+        if (ignoreComment) {
+          if (change.type === "insert") {
+            if (newFileCommentChecker!.isComment(change.lineNumber)) {
+              linesToPrint.push(dim(change.content));
+              continue;
+            }
+          } else {
+            if (oldFileCommentChecker!.isComment(change.lineNumber)) {
+              linesToPrint.push(dim(change.content));
+              continue;
+            }
+          }
+          if (content.startsWith("//") || content.startsWith("#")) {
+            linesToPrint.push(dim(change.content));
+            continue;
+          }
         }
-        linesToPrint.push(
-          (isInsertionOrDeletion ? success : error)(change.content),
-        );
-        if (isInsertionOrDeletion) insertion++;
-        else deletion++;
+        if (change.type === "insert") {
+          linesToPrint.push(success(change.content));
+          insertion++;
+        } else {
+          linesToPrint.push(error(change.content));
+          deletion++;
+        }
       }
     }
     diffs += insertion + deletion;
