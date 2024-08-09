@@ -13,8 +13,8 @@ export class MultilineCommentChecker {
     this.multilineCommentRanges = [];
     let start: number | null = null;
     const file = fileContent.split("\n");
-    for (let i = 0; i < file.length; i++) {
-      const trimmed = file[i].trim();
+    for (let i = 1; i <= file.length; i++) {
+      const trimmed = file[i - 1].trim();
       if (start === null) {
         switch (trimmed.indexOf(prefix)) {
           case -1:
@@ -36,6 +36,7 @@ export class MultilineCommentChecker {
             break;
           default:
             this.multilineCommentRanges.push(new Range(start, i - 1));
+            start = null;
             break;
         }
       }

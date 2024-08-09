@@ -72,11 +72,12 @@ export async function calculateDiffSize({
     let newFileIsSingleLineComment = (_: string) => false;
     let oldFileCommentChecker: MultilineCommentChecker | undefined;
     let newFileCommentChecker: MultilineCommentChecker | undefined;
+    // Initialize comment checker
     if (ignoreComment) {
+      // Comment checker for old file
       if (file.type !== "add") {
-        const commentSyntax = getCommentSyntax(
-          path.extname(file.oldPath).slice(1),
-        );
+        const ext = path.extname(file.oldPath).split(".").pop()!;
+        const commentSyntax = getCommentSyntax(ext);
         if (commentSyntax?.singleLine) {
           const s = commentSyntax.singleLine;
           oldFileIsSingleLineComment = Array.isArray(s)
@@ -99,10 +100,10 @@ export async function calculateDiffSize({
               )
             : undefined;
       }
+      // Comment checker for new file
       if (file.type !== "delete") {
-        const commentSyntax = getCommentSyntax(
-          path.extname(file.newPath).slice(1),
-        );
+        const ext = path.extname(file.newPath).split(".").pop()!;
+        const commentSyntax = getCommentSyntax(ext);
         if (commentSyntax?.singleLine) {
           const s = commentSyntax.singleLine;
           newFileIsSingleLineComment = Array.isArray(s)
@@ -116,9 +117,14 @@ export async function calculateDiffSize({
             else resolve(stdout);
           });
         });
-        newFileCommentChecker = newFileContent
-          ? new MultilineCommentChecker(newFileContent, "/*", "*/")
-          : undefined;
+        newFileCommentChecker =
+          newFileContent && commentSyntax?.multiLine
+            ? new MultilineCommentChecker(
+                newFileContent,
+                commentSyntax.multiLine.prefix,
+                commentSyntax.multiLine.suffix,
+              )
+            : undefined;
       }
     }
     const linesToPrint = [];
@@ -144,10 +150,11 @@ export async function calculateDiffSize({
         }
         const content = change.content.trim();
         if (!content) {
-          linesToPrint.push(dim(change.content));
-          if (ignoreWhitespace) continue;
-        }
-        if (ignoreComment) {
+          if (ignoreWhitespace) {
+            linesToPrint.push(change.content);
+            continue;
+          }
+        } else if (ignoreComment) {
           if (change.type === "insert") {
             if (newFileCommentChecker?.isComment(change.lineNumber)) {
               linesToPrint.push(dim(change.content));
