@@ -1,5 +1,5 @@
 import * as core from "@actions/core";
-import { calculateDiffSize } from "./calculateDiffSize";
+import { calculateDiffSize } from "../lib/calculateDiffSize";
 
 async function main() {
   try {

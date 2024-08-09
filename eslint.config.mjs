@@ -4,20 +4,22 @@ import tseslint from "typescript-eslint";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 import eslintPluginUnusedImports from "eslint-plugin-unused-imports";
 
-export default [
+/** @type {import("eslint").Linter.Config[]} */
+const config = [
   { ignores: ["dist/**"] },
   { files: ["**/*.{js,mjs,cjs,ts}"] },
-  { files: ["**/*.js"], languageOptions: { sourceType: "" } },
-  { languageOptions: { globals: globals.browser } },
+  { languageOptions: { globals: globals.node } },
   { plugins: { "unused-imports": eslintPluginUnusedImports } },
   pluginJs.configs.recommended,
-  ...tseslint.configs.recommended,
+  { files: ["**/*.ts"], extends: [...tseslint.configs.recommended] },
   eslintPluginPrettierRecommended,
   {
     rules: {
       "@typescript-eslint/no-unused-vars": "off",
       "unused-imports/no-unused-imports": "error",
-      "unused-imports/no-unused-vars": "error",
+      "unused-imports/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     },
   },
 ];
+
+export default config;

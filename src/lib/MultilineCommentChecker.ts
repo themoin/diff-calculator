@@ -1,5 +1,3 @@
-import fs from "fs";
-
 class Range {
   constructor(
     public start: number,
@@ -10,15 +8,15 @@ class Range {
   }
 }
 
-export class CommentChecker {
-  constructor(private path: string) {
+export class MultilineCommentChecker {
+  constructor(fileContent: string, prefix: string, suffix: string) {
     this.multilineCommentRanges = [];
-    const file = fs.readFileSync(this.path).toString().split("\n");
     let start: number | null = null;
-    for (let i = 0; i < file.length; i++) {
-      const trimmed = file[i].trim();
+    const file = fileContent.split("\n");
+    for (let i = 1; i <= file.length; i++) {
+      const trimmed = file[i - 1].trim();
       if (start === null) {
-        switch (trimmed.indexOf("/*")) {
+        switch (trimmed.indexOf(prefix)) {
           case -1:
             break;
           case 0:
@@ -29,31 +27,23 @@ export class CommentChecker {
         }
       }
       if (start !== null) {
-        switch (trimmed.indexOf("*/")) {
+        switch (trimmed.indexOf(suffix)) {
           case -1:
             break;
-          case trimmed.length - 2:
+          case trimmed.length - suffix.length:
             this.multilineCommentRanges.push(new Range(start, i));
             start = null;
             break;
           default:
             this.multilineCommentRanges.push(new Range(start, i - 1));
+            start = null;
             break;
         }
       }
     }
   }
   private multilineCommentRanges: Range[];
-  public check(lineNo: number, lineContent: string) {
-    if (this.multilineCommentRanges.some((range) => range.contains(lineNo))) {
-      return false;
-    }
-    if (lineContent.trim().startsWith("//")) {
-      return false;
-    }
-    if (lineContent.trim().startsWith("#")) {
-      return false;
-    }
-    return true;
+  public isComment(lineNo: number) {
+    return this.multilineCommentRanges.some((range) => range.contains(lineNo));
   }
 }

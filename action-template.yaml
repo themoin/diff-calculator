@@ -1,11 +1,11 @@
-name: "Get Diff Size"
-description: "Get the size of the diff between the source branch and the target branch"
+name: "Diff Calculator Action v{version}"
+description: "Get the size of the diff between the source branch and the target branch."
 inputs:
   source:
-    description: "The source branch. It must be fetched before running this action"
+    description: "The source branch. It must be fetched before running this action."
     required: true
   target:
-    description: "The target branch. It must be fetched before running this action"
+    description: "The target branch. It must be fetched before running this action."
     required: true
   ignore-deletion:
     description: "Whether to ignore deleted lines"
@@ -16,14 +16,14 @@ inputs:
     required: false
     default: "false"
   ignore-comment:
-    description: "Whether to ignore comments. ignore-deletion must be set to true"
+    description: "Whether to ignore comments"
     required: false
     default: "false"
   ignore-file-path:
-    description: "The file path of what files to ignore. If not provided, the .gitdiffignore file in the root of the repository will be used"
+    description: "The file path of what files to ignore. If not provided, the .gitdiffignore file in the root of the repository will be used."
     required: false
   verbose:
-    description: "Print the diff"
+    description: "Whether to print diff details"
     required: false
     default: "false"
 outputs:
@@ -31,4 +31,4 @@ outputs:
     description: "The size of the diff between the source branch and the target branch"
 runs:
   using: "node20"
-  main: "dist/action.js"
+  main: "index.js"
