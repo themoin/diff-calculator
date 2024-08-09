@@ -117,6 +117,7 @@ const shStyle = new Set([
   "jsonnet",
   "dockerfile",
   "gitignore",
+  "gitdiffignore",
   "gitattributes",
   "gitmodules",
   "env",

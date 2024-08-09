@@ -44,6 +44,9 @@ importers:
       globals:
         specifier: ^15.9.0
         version: 15.9.0
+      mustache:
+        specifier: ^4.2.0
+        version: 4.2.0
       typescript:
         specifier: ^5.5.4
         version: 5.5.4
@@ -704,6 +707,10 @@ packages:
 
   ms@2.1.2:
     resolution: {integrity: sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==}
+
+  mustache@4.2.0:
+    resolution: {integrity: sha512-71ippSywq5Yb7/tVYyGbkBggbU8H3u5Rz56fH60jGFgr8uHwxs+aSKeqmluIVzM0m0kB7xQjKS6qPfd0b2ZoqQ==}
+    hasBin: true
 
   natural-compare@1.4.0:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
@@ -1528,6 +1535,8 @@ snapshots:
       brace-expansion: 2.0.1
 
   ms@2.1.2: {}
+
+  mustache@4.2.0: {}
 
   natural-compare@1.4.0: {}
 
