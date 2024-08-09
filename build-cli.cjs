@@ -3,6 +3,7 @@ const { formatMessages } = require("esbuild");
 const esbuild = require("esbuild");
 
 async function main() {
+  const version = require("./package.json").version;
   const result = await esbuild.build({
     entryPoints: ["src/cli/index.ts"],
     minify: true,
@@ -10,6 +11,9 @@ async function main() {
     platform: "node",
     outfile: "dist/cli/index.js",
     target: "node20",
+    define: {
+      "__VERSION__": `"${version}"`,
+    }
   });
   if (result.warnings.length) {
     result.warnings.forEach((warning) => {
@@ -25,7 +29,7 @@ async function main() {
   // generate package.json
   const packageJson = {
     name: "@themoin/diff-calculator-cli",
-    version: require("./package.json").version,
+    version,
     repository: {
       type: "git",
       url: "https://github.com/themoin/diff-calculator.git",
