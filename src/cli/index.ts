@@ -2,7 +2,7 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { calculateDiffSize } from "../lib/calculateDiffSize";
-import { success } from "./shellUtils";
+import { success } from "../utils/shellUtils";
 
 yargs(hideBin(process.argv))
   .positional("sourceBranch", {
