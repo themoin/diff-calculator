@@ -6,6 +6,7 @@ import gitDiffParser from "gitdiff-parser";
 
 import { bold, dim, error, info, success } from "../utils/shellUtils";
 import { MultilineCommentChecker } from "./MultilineCommentChecker";
+import { getCommentSyntax } from "./getCommetSyntax";
 
 export type CalculateDiffSizeOptions = {
   log?: (message: string) => void;
@@ -67,21 +68,48 @@ export async function calculateDiffSize({
   // 추가된 줄 수 계산
   let diffs = 0;
   for (const file of files) {
+    let oldFileIsSingleLineComment = (_: string) => false;
+    let newFileIsSingleLineComment = (_: string) => false;
     let oldFileCommentChecker: MultilineCommentChecker | undefined;
     let newFileCommentChecker: MultilineCommentChecker | undefined;
     if (ignoreComment) {
       if (file.type !== "add") {
+        const commentSyntax = getCommentSyntax(
+          path.extname(file.oldPath).slice(1),
+        );
+        if (commentSyntax?.singleLine) {
+          const s = commentSyntax.singleLine;
+          oldFileIsSingleLineComment = Array.isArray(s)
+            ? (trimmed: string) =>
+                s.some((syntax) => trimmed.startsWith(syntax))
+            : (trimmed: string) => trimmed.startsWith(s);
+        }
         const oldFileContent: string = await new Promise((resolve, reject) => {
           exec(`git show ${mergeBase}:${file.oldPath}`, (err, stdout) => {
             if (err) reject(err);
             else resolve(stdout);
           });
         });
-        oldFileCommentChecker = oldFileContent
-          ? new MultilineCommentChecker(oldFileContent, "/*", "*/")
-          : undefined;
+        oldFileCommentChecker =
+          oldFileContent && commentSyntax?.multiLine
+            ? new MultilineCommentChecker(
+                oldFileContent,
+                commentSyntax.multiLine.prefix,
+                commentSyntax.multiLine.suffix,
+              )
+            : undefined;
       }
       if (file.type !== "delete") {
+        const commentSyntax = getCommentSyntax(
+          path.extname(file.newPath).slice(1),
+        );
+        if (commentSyntax?.singleLine) {
+          const s = commentSyntax.singleLine;
+          newFileIsSingleLineComment = Array.isArray(s)
+            ? (trimmed: string) =>
+                s.some((syntax) => trimmed.startsWith(syntax))
+            : (trimmed: string) => trimmed.startsWith(s);
+        }
         const newFileContent: string = await new Promise((resolve, reject) => {
           exec(`git show ${source}:${file.newPath}`, (err, stdout) => {
             if (err) reject(err);
@@ -121,19 +149,23 @@ export async function calculateDiffSize({
         }
         if (ignoreComment) {
           if (change.type === "insert") {
-            if (newFileCommentChecker!.isComment(change.lineNumber)) {
+            if (newFileCommentChecker?.isComment(change.lineNumber)) {
+              linesToPrint.push(dim(change.content));
+              continue;
+            }
+            if (newFileIsSingleLineComment(content)) {
               linesToPrint.push(dim(change.content));
               continue;
             }
           } else {
-            if (oldFileCommentChecker!.isComment(change.lineNumber)) {
+            if (oldFileCommentChecker?.isComment(change.lineNumber)) {
               linesToPrint.push(dim(change.content));
               continue;
             }
-          }
-          if (content.startsWith("//") || content.startsWith("#")) {
-            linesToPrint.push(dim(change.content));
-            continue;
+            if (oldFileIsSingleLineComment(content)) {
+              linesToPrint.push(dim(change.content));
+              continue;
+            }
           }
         }
         if (change.type === "insert") {
