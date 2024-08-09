@@ -77,7 +77,7 @@ jobs:
           fetch-depth: 0
       - name: Calculate diff size
         id: get-pr-size
-        uses: themoin/diff-calculator-action@{version}
+        uses: themoin/diff-calculator@{version}
         with:
           source: origin/${{ github.head_ref }}
           target: origin/${{ github.base_ref }}
@@ -104,7 +104,7 @@ jobs:
           fetch-depth: 0
       - name: Calculate diff size
         id: get-pr-size
-        uses: themoin/diff-calculator-action@{version}
+        uses: themoin/diff-calculator@{version}
         with:
           source: origin/${{ github.head_ref }}
           target: origin/${{ github.base_ref }}
