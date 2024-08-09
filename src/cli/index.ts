@@ -4,6 +4,8 @@ import { hideBin } from "yargs/helpers";
 import { calculateDiffSize } from "../lib/calculateDiffSize";
 import { success } from "../utils/shellUtils";
 
+declare const __VERSION__: string;
+
 yargs(hideBin(process.argv))
   .positional("sourceBranch", {
     default: "HEAD",
@@ -73,5 +75,5 @@ yargs(hideBin(process.argv))
       }
     },
   )
-  .version(false)
+  .version(__VERSION__)
   .parse();
