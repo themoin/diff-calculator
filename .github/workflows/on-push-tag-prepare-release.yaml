@@ -12,6 +12,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - name: Enable corepack
+        run: corepack enable pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build CLI and action
@@ -22,15 +24,15 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: cli.tar.gz
-          tag_name: ${{ github.ref }}
+          tag_name: ${{ github.ref_name }}
           draft: true
           token: ${{ secrets.GITHUB_TOKEN }}
       - run: cd dist/action
-      - run: git init
-      - run: git config user.name "themoin-bot"
-      - run: git branch -m release/${{ github.ref }}
-      - run: git add .
-      - run: git commit -m "Release ${{ github.ref }}"
-      - run: git remote add origin git@github.com:themoin/diff-calculator-action.git
+      - run: cd dist/action && git init -b release/${{ github.ref_name }}
+      - run: cd dist/action && git config user.name "themoin-bot"
+      - run: cd dist/action && git add .
+      - run: cd dist/action && git commit -m "Release ${{ github.ref_name }}"
+      - run: cd dist/action && git remote add origin git@github.com:themoin/diff-calculator-action.git
+      - run: cd dist/action && git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/themoin/diff-calculator-action
       - name: Push release branch to themoin/diff-calculator-action
-        run: git push -u origin release/${{ github.ref }}
+        run: cd dist/action && git push -u origin release/${{ github.ref_name }}
