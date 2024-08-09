@@ -4,8 +4,8 @@ import path from "path";
 
 import gitDiffParser from "gitdiff-parser";
 
-import { bold, dim, error, info, success } from "../utils/shellUtils.js";
-import { MultilineCommentChecker } from "./MultilineCommentChecker.js";
+import { bold, dim, error, info, success } from "../utils/shellUtils";
+import { MultilineCommentChecker } from "./MultilineCommentChecker";
 
 export type CalculateDiffSizeOptions = {
   log?: (message: string) => void;
@@ -67,30 +67,32 @@ export async function calculateDiffSize({
   // 추가된 줄 수 계산
   let diffs = 0;
   for (const file of files) {
-    const oldFileContent: string | null = await new Promise(
-      (resolve, reject) => {
-        if (file.type === "add") return resolve(null);
-        exec(`git show ${mergeBase}:${file.oldPath}`, (err, stdout) => {
-          if (err) reject(err);
-          else resolve(stdout);
+    let oldFileCommentChecker: MultilineCommentChecker | undefined;
+    let newFileCommentChecker: MultilineCommentChecker | undefined;
+    if (ignoreComment) {
+      if (file.type !== "add") {
+        const oldFileContent: string = await new Promise((resolve, reject) => {
+          exec(`git show ${mergeBase}:${file.oldPath}`, (err, stdout) => {
+            if (err) reject(err);
+            else resolve(stdout);
+          });
         });
-      },
-    );
-    const newFileContent: string = await new Promise((resolve, reject) => {
-      if (file.type === "delete") return resolve("");
-      exec(`git show ${source}:${file.newPath}`, (err, stdout) => {
-        if (err) reject(err);
-        else resolve(stdout);
-      });
-    });
-    const oldFileCommentChecker =
-      ignoreComment && oldFileContent
-        ? new MultilineCommentChecker(oldFileContent)
-        : undefined;
-    const newFileCommentChecker =
-      ignoreComment && newFileContent
-        ? new MultilineCommentChecker(newFileContent)
-        : undefined;
+        oldFileCommentChecker = oldFileContent
+          ? new MultilineCommentChecker(oldFileContent, "/*", "*/")
+          : undefined;
+      }
+      if (file.type !== "delete") {
+        const newFileContent: string = await new Promise((resolve, reject) => {
+          exec(`git show ${source}:${file.newPath}`, (err, stdout) => {
+            if (err) reject(err);
+            else resolve(stdout);
+          });
+        });
+        newFileCommentChecker = newFileContent
+          ? new MultilineCommentChecker(newFileContent, "/*", "*/")
+          : undefined;
+      }
+    }
     const linesToPrint = [];
     let insertion = 0;
     let deletion = 0;

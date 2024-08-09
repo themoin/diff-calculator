@@ -9,14 +9,14 @@ class Range {
 }
 
 export class MultilineCommentChecker {
-  constructor(fileContent: string) {
+  constructor(fileContent: string, prefix: string, suffix: string) {
     this.multilineCommentRanges = [];
     let start: number | null = null;
     const file = fileContent.split("\n");
     for (let i = 0; i < file.length; i++) {
       const trimmed = file[i].trim();
       if (start === null) {
-        switch (trimmed.indexOf("/*")) {
+        switch (trimmed.indexOf(prefix)) {
           case -1:
             break;
           case 0:
@@ -27,10 +27,10 @@ export class MultilineCommentChecker {
         }
       }
       if (start !== null) {
-        switch (trimmed.indexOf("*/")) {
+        switch (trimmed.indexOf(suffix)) {
           case -1:
             break;
-          case trimmed.length - 2:
+          case trimmed.length - suffix.length:
             this.multilineCommentRanges.push(new Range(start, i));
             start = null;
             break;
