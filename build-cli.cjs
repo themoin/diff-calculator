@@ -1,4 +1,4 @@
-const { writeFileSync } = require("fs");
+const { writeFileSync, readFileSync } = require("fs");
 const { formatMessages } = require("esbuild");
 const esbuild = require("esbuild");
 
@@ -26,6 +26,10 @@ async function main() {
   const packageJson = {
     name: "@themoin/diff-calculator-cli",
     version: require("./package.json").version,
+    repository: {
+      type: "git",
+      url: "https://github.com/themoin/diff-calculator.git",
+    },
     description:
       "CLI for aggregating diff between two revisions, which can ignore deletions, whitespaces and comments",
     bin: {
@@ -45,6 +49,11 @@ async function main() {
     license: "MIT",
   };
   writeFileSync("dist/cli/package.json", JSON.stringify(packageJson, null, 2));
+  const readme = readFileSync("README.md", "utf-8").replace(
+    /\{version\}/g,
+    packageJson.version,
+  );
+  writeFileSync("dist/cli/README.md", readme);
 }
 
 main();

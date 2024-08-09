@@ -1,32 +1,16 @@
 {
   "name": "@themoin/diff-calculator",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "repository": {
     "type": "git",
     "url": "https://github.com/themoin/diff-calculator.git"
   },
-  "description": "Github Action and npm CLI for comment, whitespace ignorable diff checker",
   "scripts": {
     "lint": "eslint .",
     "build:cli": "node build-cli.cjs",
-    "build:action": "esbuild src/action/index.ts --minify --bundle --platform=node --outfile=dist/action.js --target=node20",
+    "build:action": "node build-action.cjs",
     "build": "pnpm run build:cli && pnpm run build:action"
   },
-  "files": [
-    "dist/cli.js"
-  ],
-  "bin": {
-    "calcdiff": "dist/cli.js"
-  },
-  "keywords": [
-    "diff",
-    "comment",
-    "whitespace",
-    "ignorable",
-    "checker",
-    "calculator",
-    "git"
-  ],
   "author": "haenah",
   "license": "MIT",
   "devDependencies": {
@@ -42,9 +26,9 @@
     "eslint-plugin-unused-imports": "^4.0.1",
     "gitdiff-parser": "^0.3.1",
     "globals": "^15.9.0",
-    "mustache": "^4.2.0",
     "typescript": "^5.5.4",
     "typescript-eslint": "^8.0.1",
     "yargs": "^17.7.2"
-  }
+  },
+  "packageManager": "pnpm@9.7.0+sha256.b35018fbfa8f583668b2649e407922a721355cd81f61beeb4ac1d4258e585559"
 }

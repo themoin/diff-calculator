@@ -1,0 +1,36 @@
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build CLI and action
+        run: pnpm build
+      - name: Compress CLI build output
+        run: tar -czf cli.tar.gz dist/cli
+      - name: Create draft release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: cli.tar.gz
+          tag_name: ${{ github.ref }}
+          draft: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - run: cd dist/action
+      - run: git init
+      - run: git config user.name "themoin-bot"
+      - run: git branch -m release/${{ github.ref }}
+      - run: git add .
+      - run: git commit -m "Release ${{ github.ref }}"
+      - run: git remote add origin git@github.com:themoin/diff-calculator-action.git
+      - name: Push release branch to themoin/diff-calculator-action
+        run: git push -u origin release/${{ github.ref }}

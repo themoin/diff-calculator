@@ -1,4 +1,4 @@
-name: "Get Diff Size"
+name: "Diff Calculator Action v{version}"
 description: "Get the size of the diff between the source branch and the target branch."
 inputs:
   source:
@@ -31,4 +31,4 @@ outputs:
     description: "The size of the diff between the source branch and the target branch"
 runs:
   using: "node20"
-  main: "dist/action.js"
+  main: "index.js"
