@@ -36,6 +36,7 @@ export type Line =
 class LineScanner {
   private buffer: string | null = null;
   constructor(private lines: AsyncIterator<string>) {}
+  /** Do not consume, just peek the first line from the scanner cursor */
   async peek() {
     if (this.buffer) return this.buffer;
     const next = await this.lines.next();
@@ -43,6 +44,7 @@ class LineScanner {
     this.buffer = next.value;
     return this.buffer;
   }
+  /** Consume */
   async scan() {
     const line = await this.peek();
     this.buffer = null;
@@ -72,6 +74,7 @@ async function parseFileDiff(scanner: LineScanner): Promise<FileDiff | null> {
   if (line[0] !== "d") {
     throw new Error("Expected diff line");
   }
+  // diff --git a/<old-path> b/<new-path>
   await scanner.scan();
   const [, , oldPath, newPath] = line.split(" ");
   const type = await parseFileHeader(scanner);
@@ -83,7 +86,7 @@ async function parseFileDiff(scanner: LineScanner): Promise<FileDiff | null> {
   const isBinary = await parseBinary(scanner);
   if (isBinary) return { ...fileInfo, isBinary: true };
   const hunks: Hunk[] = [];
-  if (await parseHunkHeader(scanner)) {
+  if (await parseHunkPath(scanner)) {
     while (true) {
       const hunk = await parseHunk(scanner);
       if (!hunk) break;
@@ -91,18 +94,6 @@ async function parseFileDiff(scanner: LineScanner): Promise<FileDiff | null> {
     }
   }
   return { ...fileInfo, hunks, isBinary: false };
-}
-
-async function parseHunkHeader(scanner: LineScanner) {
-  const line = await scanner.peek();
-  if (!line || line[0] === "d") {
-    return false;
-  }
-  // --- a/<path>
-  await scanner.scan();
-  // +++ b/<path>
-  await scanner.scan();
-  return true;
 }
 
 async function parseFileHeader(
@@ -129,7 +120,7 @@ async function parseFileHeader(
             fileDiffType = "D";
             break;
           case "i":
-            // diff --git a/<path> b/<path>
+            // dissimilarity index <number>
             await scanner.scan();
         }
         break;
@@ -166,13 +157,28 @@ async function parseFileHeader(
 
 async function parseBinary(scanner: LineScanner): Promise<boolean> {
   const line = await scanner.peek();
+  // Binary files differ
   if (!line || line[0] !== "B") return false;
+  await scanner.scan();
+  return true;
+}
+
+async function parseHunkPath(scanner: LineScanner) {
+  const line = await scanner.peek();
+  // If scanner is at the end of file, or next `diff --git` line
+  if (!line || line[0] === "d") {
+    return false;
+  }
+  // --- a/<path>
+  await scanner.scan();
+  // +++ b/<path>
   await scanner.scan();
   return true;
 }
 
 async function parseHunk(scanner: LineScanner): Promise<Hunk | null> {
   const line = await scanner.peek();
+  // If scanner is at the end of file, or hunk does not exist
   if (!line || line[0] !== "@") {
     return null;
   }
@@ -190,6 +196,7 @@ async function parseHunk(scanner: LineScanner): Promise<Hunk | null> {
   let newLineNo = newStart;
   while (true) {
     const line = await scanner.peek();
+    // If scanner is at the end of file, or next `diff --git` line, or next hunk
     if (!line || line[0] === "d" || line[0] === "@") break;
     const type = line[0] as Line["type"];
     switch (type) {
@@ -212,6 +219,10 @@ async function parseHunk(scanner: LineScanner): Promise<Hunk | null> {
   return hunk;
 }
 
+/**
+ * `-<start>[,<lines>]`\
+ * if `,<lines>` is omitted, it is 1
+ */
 function parseHunkRange(range: string): [number, number] {
   const splitted = range.slice(1).split(",");
   if (splitted.length === 1) {
