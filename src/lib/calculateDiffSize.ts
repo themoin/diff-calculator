@@ -105,13 +105,13 @@ export async function calculateDiffSize({
             linesToPrint.push(dim(change.content));
             continue;
         }
-        const content = change.content.trim();
-        if (!content && ignoreWhitespace) {
-          linesToPrint.push(change.content);
+        const trimmed = change.content.slice(1).trim();
+        if (!trimmed && ignoreWhitespace) {
+          linesToPrint.push(dim(change.content));
           continue;
         }
         if (change.type === "+") {
-          if (content && newFileCommentChecker?.(change.lineNo)) {
+          if (trimmed && newFileCommentChecker?.(change.lineNo)) {
             linesToPrint.push(dim(change.content));
             continue;
           } else {
@@ -119,7 +119,7 @@ export async function calculateDiffSize({
             insertion++;
           }
         } else {
-          if (content && oldFileCommentChecker?.(change.lineNo)) {
+          if (trimmed && oldFileCommentChecker?.(change.lineNo)) {
             linesToPrint.push(dim(change.content));
             continue;
           } else {
