@@ -17,9 +17,6 @@ importers:
       esbuild:
         specifier: ^0.23.0
         version: 0.23.0
-      gitdiff-parser:
-        specifier: ^0.3.1
-        version: 0.3.1
       typescript:
         specifier: ^5.5.4
         version: 5.5.4
@@ -595,9 +592,6 @@ packages:
   get-caller-file@2.0.5:
     resolution: {integrity: sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==}
     engines: {node: 6.* || 8.* || >= 10.*}
-
-  gitdiff-parser@0.3.1:
-    resolution: {integrity: sha512-YQJnY8aew65id8okGxKCksH3efDCJ9HzV7M9rsvd65habf39Pkh4cgYJ27AaoDMqo1X98pgNJhNMrm/kpV7UVQ==}
 
   glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}
@@ -1437,8 +1431,6 @@ snapshots:
   flatted@3.3.1: {}
 
   get-caller-file@2.0.5: {}
-
-  gitdiff-parser@0.3.1: {}
 
   glob-parent@5.1.2:
     dependencies:
