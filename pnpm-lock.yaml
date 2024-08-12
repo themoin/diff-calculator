@@ -7,13 +7,23 @@ settings:
 importers:
 
   .:
-    devDependencies:
+    dependencies:
       '@actions/core':
         specifier: ^1.10.1
         version: 1.10.1
       '@actions/github':
         specifier: ^6.0.0
         version: 6.0.0
+      esbuild:
+        specifier: ^0.23.0
+        version: 0.23.0
+      typescript:
+        specifier: ^5.5.4
+        version: 5.5.4
+      yargs:
+        specifier: ^17.7.2
+        version: 17.7.2
+    devDependencies:
       '@eslint/js':
         specifier: ^9.8.0
         version: 9.8.0
@@ -23,9 +33,6 @@ importers:
       '@types/yargs':
         specifier: ^17.0.32
         version: 17.0.32
-      esbuild:
-        specifier: ^0.23.0
-        version: 0.23.0
       eslint:
         specifier: 9.x
         version: 9.8.0
@@ -38,21 +45,12 @@ importers:
       eslint-plugin-unused-imports:
         specifier: ^4.0.1
         version: 4.0.1(@typescript-eslint/eslint-plugin@8.0.1(@typescript-eslint/parser@8.0.1(eslint@9.8.0)(typescript@5.5.4))(eslint@9.8.0)(typescript@5.5.4))(eslint@9.8.0)
-      gitdiff-parser:
-        specifier: ^0.3.1
-        version: 0.3.1
       globals:
         specifier: ^15.9.0
         version: 15.9.0
-      typescript:
-        specifier: ^5.5.4
-        version: 5.5.4
       typescript-eslint:
         specifier: ^8.0.1
         version: 8.0.1(eslint@9.8.0)(typescript@5.5.4)
-      yargs:
-        specifier: ^17.7.2
-        version: 17.7.2
 
 packages:
 
@@ -594,9 +592,6 @@ packages:
   get-caller-file@2.0.5:
     resolution: {integrity: sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==}
     engines: {node: 6.* || 8.* || >= 10.*}
-
-  gitdiff-parser@0.3.1:
-    resolution: {integrity: sha512-YQJnY8aew65id8okGxKCksH3efDCJ9HzV7M9rsvd65habf39Pkh4cgYJ27AaoDMqo1X98pgNJhNMrm/kpV7UVQ==}
 
   glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}
@@ -1436,8 +1431,6 @@ snapshots:
   flatted@3.3.1: {}
 
   get-caller-file@2.0.5: {}
-
-  gitdiff-parser@0.3.1: {}
 
   glob-parent@5.1.2:
     dependencies:

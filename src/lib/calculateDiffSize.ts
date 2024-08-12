@@ -2,11 +2,11 @@ import { exec } from "child_process";
 import fs from "fs";
 import path from "path";
 
-import gitDiffParser from "gitdiff-parser";
-
 import { bold, dim, error, info, success } from "../utils/shellUtils";
-import { MultilineCommentChecker } from "./MultilineCommentChecker";
 import { getCommentSyntax } from "./getCommetSyntax";
+import { createCommentChecker } from "./createCommentChecker";
+import { createInterface } from "readline";
+import { parseGitDiff } from "./parseGitDiff";
 
 export type CalculateDiffSizeOptions = {
   log?: (message: string) => void;
@@ -29,7 +29,6 @@ export async function calculateDiffSize({
   ignoreWhitespace,
   ignoreComment,
 }: CalculateDiffSizeOptions) {
-  // 제외될 파일 계산
   let ignoreFileGlobs: string[] = [];
   if (fs.existsSync(ignoreFilePath)) {
     ignoreFileGlobs = fs
@@ -48,139 +47,85 @@ export async function calculateDiffSize({
       else resolve(stdout.trim());
     });
   });
-  const diff: string = await new Promise((resolve, reject) => {
-    const execArgs = ["git diff"];
-    execArgs.push(`${mergeBase}..${source}`);
-    if (ignoreWhitespace) execArgs.push("-w");
-    if (ignoreDeletion) execArgs.push("--diff-filter=ACMR");
-    if (ignoreFileGlobs.length)
-      execArgs.push(...ignoreFileGlobs.map((pattern) => `":!${pattern}"`));
-    exec(execArgs.join(" "), (err, stdout) => {
-      if (err) reject(err);
-      else resolve(stdout);
-    });
-  });
-  const files = gitDiffParser.parse(diff).filter((file) => {
-    if (file.isBinary) return false;
-    return true;
-  });
+  const execArgs = ["git diff --no-color"];
+  execArgs.push(`${mergeBase}..${source}`);
+  if (ignoreWhitespace) execArgs.push("-w");
+  if (ignoreDeletion) execArgs.push("--diff-filter=ACMR");
+  if (ignoreFileGlobs.length)
+    execArgs.push(...ignoreFileGlobs.map((pattern) => `":!${pattern}"`));
+  const gitDiffProc = exec(execArgs.join(" "));
+  if (!gitDiffProc.stdout) throw new Error("Failed to get git diff");
+  const parsedDiff = await parseGitDiff(
+    createInterface({ input: gitDiffProc.stdout })[Symbol.asyncIterator](),
+  );
 
-  // 추가된 줄 수 계산
   let diffs = 0;
-  for (const file of files) {
-    let oldFileIsSingleLineComment = (_: string) => false;
-    let newFileIsSingleLineComment = (_: string) => false;
-    let oldFileCommentChecker: MultilineCommentChecker | undefined;
-    let newFileCommentChecker: MultilineCommentChecker | undefined;
-    // Initialize comment checker
-    if (ignoreComment) {
-      // Comment checker for old file
-      if (file.type !== "add") {
-        const ext = path.extname(file.oldPath).split(".").pop()!;
-        const commentSyntax = getCommentSyntax(ext);
-        if (commentSyntax?.singleLine) {
-          const s = commentSyntax.singleLine;
-          oldFileIsSingleLineComment = Array.isArray(s)
-            ? (trimmed: string) =>
-                s.some((syntax) => trimmed.startsWith(syntax))
-            : (trimmed: string) => trimmed.startsWith(s);
-        }
-        const oldFileContent: string = await new Promise((resolve, reject) => {
-          exec(`git show ${mergeBase}:${file.oldPath}`, (err, stdout) => {
-            if (err) reject(err);
-            else resolve(stdout);
-          });
-        });
-        oldFileCommentChecker =
-          oldFileContent && commentSyntax?.multiLine
-            ? new MultilineCommentChecker(
-                oldFileContent,
-                commentSyntax.multiLine.prefix,
-                commentSyntax.multiLine.suffix,
-              )
-            : undefined;
-      }
-      // Comment checker for new file
-      if (file.type !== "delete") {
-        const ext = path.extname(file.newPath).split(".").pop()!;
-        const commentSyntax = getCommentSyntax(ext);
-        if (commentSyntax?.singleLine) {
-          const s = commentSyntax.singleLine;
-          newFileIsSingleLineComment = Array.isArray(s)
-            ? (trimmed: string) =>
-                s.some((syntax) => trimmed.startsWith(syntax))
-            : (trimmed: string) => trimmed.startsWith(s);
-        }
-        const newFileContent: string = await new Promise((resolve, reject) => {
-          exec(`git show ${source}:${file.newPath}`, (err, stdout) => {
-            if (err) reject(err);
-            else resolve(stdout);
-          });
-        });
-        newFileCommentChecker =
-          newFileContent && commentSyntax?.multiLine
-            ? new MultilineCommentChecker(
-                newFileContent,
-                commentSyntax.multiLine.prefix,
-                commentSyntax.multiLine.suffix,
-              )
-            : undefined;
-      }
-    }
+  for (const file of parsedDiff) {
+    if (file.isBinary) continue;
+    const oldFileCommentChecker = await (() => {
+      if (!ignoreComment) return undefined;
+      const ext = path.basename(file.oldPath).split(".").pop();
+      if (!ext) return undefined;
+      const commentSyntax = getCommentSyntax(ext);
+      if (!commentSyntax) return undefined;
+      const gitShowProcess = exec(`git show ${mergeBase}:${file.oldPath}`);
+      if (!gitShowProcess.stdout)
+        throw new Error("Failed to get old file content");
+      return createCommentChecker(
+        createInterface({ input: gitShowProcess.stdout }),
+        commentSyntax,
+      );
+    })();
+    const newFileCommentChecker = await (() => {
+      if (!ignoreComment) return undefined;
+      const ext = path.basename(file.newPath).split(".").pop();
+      if (!ext) return undefined;
+      const commentSyntax = getCommentSyntax(ext);
+      if (!commentSyntax) return undefined;
+      const gitShowProcess = exec(`git show ${source}:${file.newPath}`);
+      if (!gitShowProcess.stdout)
+        throw new Error("Failed to get new file content");
+      return createCommentChecker(
+        createInterface({ input: gitShowProcess.stdout }),
+        commentSyntax,
+      );
+    })();
+
     const linesToPrint = [];
     let insertion = 0;
     let deletion = 0;
     for (const hunk of file.hunks) {
-      if (verbose)
-        linesToPrint.push(
-          bold(
-            ignoreDeletion
-              ? `From line ${hunk.newStart} to ${hunk.newStart + hunk.newLines - 1}`
-              : `From line ${hunk.oldStart} to ${hunk.oldStart + hunk.oldLines - 1} ➡ From line ${hunk.newStart} to ${hunk.newStart + hunk.newLines - 1}`,
-          ),
-        );
-      for (const change of hunk.changes) {
+      if (verbose) linesToPrint.push(info(bold(hunk.header)));
+      for (const change of hunk.lines) {
         switch (change.type) {
-          case "delete":
+          case "-":
             if (ignoreDeletion) continue;
             break;
-          case "normal":
+          case " ":
             linesToPrint.push(dim(change.content));
             continue;
         }
-        const content = change.content.trim();
-        if (!content) {
-          if (ignoreWhitespace) {
-            linesToPrint.push(change.content);
-            continue;
-          }
-        } else if (ignoreComment) {
-          if (change.type === "insert") {
-            if (newFileCommentChecker?.isComment(change.lineNumber)) {
-              linesToPrint.push(dim(change.content));
-              continue;
-            }
-            if (newFileIsSingleLineComment(content)) {
-              linesToPrint.push(dim(change.content));
-              continue;
-            }
-          } else {
-            if (oldFileCommentChecker?.isComment(change.lineNumber)) {
-              linesToPrint.push(dim(change.content));
-              continue;
-            }
-            if (oldFileIsSingleLineComment(content)) {
-              linesToPrint.push(dim(change.content));
-              continue;
-            }
-          }
+        const trimmed = change.content.slice(1).trim();
+        if (!trimmed && ignoreWhitespace) {
+          linesToPrint.push(dim(change.content));
+          continue;
         }
-        if (change.type === "insert") {
-          linesToPrint.push(success(change.content));
-          insertion++;
+        if (change.type === "+") {
+          if (trimmed && newFileCommentChecker?.(change.lineNo)) {
+            linesToPrint.push(dim(change.content));
+            continue;
+          } else {
+            linesToPrint.push(success(change.content));
+            insertion++;
+          }
         } else {
-          linesToPrint.push(error(change.content));
-          deletion++;
+          if (trimmed && oldFileCommentChecker?.(change.lineNo)) {
+            linesToPrint.push(dim(change.content));
+            continue;
+          } else {
+            linesToPrint.push(error(change.content));
+            deletion++;
+          }
         }
       }
     }

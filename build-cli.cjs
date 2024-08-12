@@ -3,17 +3,20 @@ const { formatMessages } = require("esbuild");
 const esbuild = require("esbuild");
 
 async function main() {
+  const debug = process.env.DEBUG === "true";
   const version = require("./package.json").version;
   const result = await esbuild.build({
     entryPoints: ["src/cli/index.ts"],
-    minify: true,
+    minify: !debug,
     bundle: true,
     platform: "node",
     outfile: "dist/cli/index.js",
     target: "node20",
+    sourcemap: debug,
     define: {
-      "__VERSION__": `"${version}"`,
-    }
+      __VERSION__: `"${version}"`,
+      __DEBUG__: debug ? "true" : "false",
+    },
   });
   if (result.warnings.length) {
     result.warnings.forEach((warning) => {

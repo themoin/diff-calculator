@@ -1,4 +1,4 @@
-type CommentSyntax = {
+export type CommentSyntax = {
   singleLine?: string | string[];
   multiLine?: {
     prefix: string;

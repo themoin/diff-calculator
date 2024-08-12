@@ -1,6 +1,6 @@
 {
   "name": "@themoin/diff-calculator",
-  "version": "0.1.8",
+  "version": "0.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/themoin/diff-calculator.git"
@@ -8,27 +8,32 @@
   "scripts": {
     "lint": "eslint .",
     "build:cli": "node build-cli.cjs",
+    "build:cli:debug": "DEBUG=true node build-cli.cjs",
     "build:action": "node build-action.cjs",
-    "build": "pnpm run build:cli && pnpm run build:action"
+    "build": "pnpm run build:cli && pnpm run build:action",
+    "link:cli": "cd dist/cli && npm link",
+    "apply:cli": "pnpm run build:cli && pnpm run link:cli",
+    "apply:cli:debug": "pnpm run build:cli:debug && pnpm run link:cli"
   },
   "author": "haenah",
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.4",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
     "@eslint/js": "^9.8.0",
     "@types/node": "^22.1.0",
     "@types/yargs": "^17.0.32",
-    "esbuild": "^0.23.0",
     "eslint": "9.x",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-unused-imports": "^4.0.1",
-    "gitdiff-parser": "^0.3.1",
     "globals": "^15.9.0",
-    "typescript": "^5.5.4",
-    "typescript-eslint": "^8.0.1",
-    "yargs": "^17.7.2"
+    "typescript-eslint": "^8.0.1"
   },
   "packageManager": "pnpm@9.7.0+sha256.b35018fbfa8f583668b2649e407922a721355cd81f61beeb4ac1d4258e585559"
 }
