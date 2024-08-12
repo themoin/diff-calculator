@@ -11,7 +11,7 @@ const config = [
   { languageOptions: { globals: globals.node } },
   { plugins: { "unused-imports": eslintPluginUnusedImports } },
   pluginJs.configs.recommended,
-  { files: ["**/*.ts"], extends: [...tseslint.configs.recommended] },
+  ...tseslint.configs.strict,
   eslintPluginPrettierRecommended,
   {
     rules: {
