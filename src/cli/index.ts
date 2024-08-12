@@ -58,9 +58,12 @@ yargs(hideBin(process.argv))
     "Get the size of the diff between the source branch and the target branch.",
     () => {},
     async (argv) => {
+      if (argv.targetBranch === undefined) {
+        throw new Error("Missing target branch");
+      }
       const diffs = await calculateDiffSize({
         source: argv.sourceBranch,
-        target: argv.targetBranch!,
+        target: argv.targetBranch,
         ignoreFilePath: argv.ignoreFilePath,
         log: argv.quiet ? undefined : console.log,
         verbose: argv.verbose,

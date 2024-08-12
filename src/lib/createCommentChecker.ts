@@ -45,7 +45,7 @@ export async function createCommentChecker(
         }
       }
     }
-    if (syntax.singleLine) {
+    if (start === null && syntax.singleLine) {
       if (Array.isArray(syntax.singleLine)) {
         if (syntax.singleLine.some((syntax) => trimmed.startsWith(syntax))) {
           singleLineCommentLineNos.add(lineNo);
@@ -56,42 +56,33 @@ export async function createCommentChecker(
         }
       }
     }
-
-    function isMultiLineComment(lineNo: number) {
-      if (ranges.length === 0) {
+  }
+  function isMultiLineComment(lineNo: number) {
+    if (ranges.length === 0) {
+      return false;
+    }
+    // binary search
+    function isMultiLineCommentRec(start: number, end: number): boolean {
+      if (start > end) {
         return false;
       }
-      // binary search
-      function isMultiLineCommentRec(start: number, end: number): boolean {
-        if (start > end) {
-          return false;
-        }
-        const mid = Math.floor((start + end) / 2);
-        const range = ranges[mid];
-        if (range.start <= lineNo && lineNo <= range.end) {
-          return true;
-        }
-        if (lineNo < range.start) {
-          return isMultiLineCommentRec(start, mid - 1);
-        }
-        return isMultiLineCommentRec(mid + 1, end);
+      const mid = Math.floor((start + end) / 2);
+      const range = ranges[mid];
+      if (range.start <= lineNo && lineNo <= range.end) {
+        return true;
       }
-      return isMultiLineCommentRec(0, ranges.length - 1);
+      if (lineNo < range.start) {
+        return isMultiLineCommentRec(start, mid - 1);
+      }
+      return isMultiLineCommentRec(mid + 1, end);
     }
-
-    function isSingleLineComment(lineNo: number) {
-      return singleLineCommentLineNos.has(lineNo);
-    }
-
-    if (syntax.multiLine && syntax.singleLine) {
-      return isMultiLineComment;
-    }
-    if (syntax.multiLine) {
-      return isMultiLineComment;
-    }
-    if (syntax.singleLine) {
-      return isSingleLineComment;
-    }
-    return () => false;
+    return isMultiLineCommentRec(0, ranges.length - 1);
   }
+
+  function isSingleLineComment(lineNo: number) {
+    return singleLineCommentLineNos.has(lineNo);
+  }
+
+  return (lineNo: number) =>
+    isMultiLineComment(lineNo) || isSingleLineComment(lineNo);
 }

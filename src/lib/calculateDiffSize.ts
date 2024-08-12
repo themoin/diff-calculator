@@ -30,7 +30,6 @@ export async function calculateDiffSize({
   ignoreWhitespace,
   ignoreComment,
 }: CalculateDiffSizeOptions) {
-  // 제외될 파일 계산
   let ignoreFileGlobs: string[] = [];
   if (fs.existsSync(ignoreFilePath)) {
     ignoreFileGlobs = fs
@@ -66,7 +65,6 @@ export async function calculateDiffSize({
     return true;
   });
 
-  // 추가된 줄 수 계산
   let diffs = 0;
   for (const file of files) {
     const oldFileCommentChecker = await (() => {
@@ -79,10 +77,7 @@ export async function calculateDiffSize({
       if (!gitShowProcess.stdout)
         throw new Error("Failed to get old file content");
       return createCommentChecker(
-        createInterface({
-          input: gitShowProcess.stdout,
-          terminal: false,
-        }),
+        createInterface({ input: gitShowProcess.stdout }),
         commentSyntax,
       );
     })();
@@ -92,14 +87,11 @@ export async function calculateDiffSize({
       if (!ext) return undefined;
       const commentSyntax = getCommentSyntax(ext);
       if (!commentSyntax) return undefined;
-      const gitShowProcess = exec(`git show ${target}:${file.newPath}`);
+      const gitShowProcess = exec(`git show ${source}:${file.newPath}`);
       if (!gitShowProcess.stdout)
         throw new Error("Failed to get new file content");
       return createCommentChecker(
-        createInterface({
-          input: gitShowProcess.stdout,
-          terminal: false,
-        }),
+        createInterface({ input: gitShowProcess.stdout }),
         commentSyntax,
       );
     })();
@@ -131,40 +123,39 @@ export async function calculateDiffSize({
             linesToPrint.push(change.content);
             continue;
           }
-        } else if (ignoreComment) {
+        } else {
           if (change.type === "insert") {
             if (newFileCommentChecker?.(change.lineNumber)) {
               linesToPrint.push(dim(change.content));
               continue;
+            } else {
+              linesToPrint.push(success(change.content));
+              insertion++;
             }
           } else {
             if (oldFileCommentChecker?.(change.lineNumber)) {
               linesToPrint.push(dim(change.content));
               continue;
+            } else {
+              linesToPrint.push(error(change.content));
+              deletion++;
             }
-          }
-          if (change.type === "insert") {
-            linesToPrint.push(success(change.content));
-            insertion++;
-          } else {
-            linesToPrint.push(error(change.content));
-            deletion++;
           }
         }
       }
-    }
-    diffs += insertion + deletion;
-    if (log && insertion + deletion) {
-      log(
-        info(
-          bold(
-            `📄 ${file.newPath}${deletion ? error(` -${deletion}`) : ""}${insertion ? success(` +${insertion}`) : ""}`,
+      diffs += insertion + deletion;
+      if (log && insertion + deletion) {
+        log(
+          info(
+            bold(
+              `📄 ${file.newPath}${deletion ? error(` -${deletion}`) : ""}${insertion ? success(` +${insertion}`) : ""}`,
+            ),
           ),
-        ),
-      );
-      if (verbose) {
-        log(linesToPrint.join("\n"));
-        log("");
+        );
+        if (verbose) {
+          log(linesToPrint.join("\n"));
+          log("");
+        }
       }
     }
   }
