@@ -138,12 +138,14 @@ async function parseFileHeader(
         if (fileDiffType && fileDiffType !== "C")
           throw new Error("Invalid file type: " + fileDiffType);
         fileDiffType = "C";
+        await scanner.scan();
         break;
       case "r":
         // rename from/to <path>
         if (fileDiffType && fileDiffType !== "R")
           throw new Error("Invalid file type: " + fileDiffType);
         fileDiffType = "R";
+        await scanner.scan();
         break;
       case "s":
         // similarity index <number>
