@@ -175,10 +175,8 @@ async function parseHunk(scanner: LineScanner): Promise<Hunk | null> {
     return null;
   }
   // @@ -<old-start>[,<old-lines>] +<new-start>[,<new-lines>] @@
-  const hunkHeader = await scanner.scan();
-  if (!hunkHeader || hunkHeader[0] !== "@") {
-    throw new Error("Expected hunk header");
-  }
+  const hunkHeader = (await scanner.scan())!;
+
   const [, _old, _new] = hunkHeader.split(" ");
   const [oldStart] = parseHunkRange(_old);
   const [newStart] = parseHunkRange(_new);
