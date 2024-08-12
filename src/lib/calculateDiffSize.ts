@@ -2,12 +2,11 @@ import { exec } from "child_process";
 import fs from "fs";
 import path from "path";
 
-import gitDiffParser from "gitdiff-parser";
-
 import { bold, dim, error, info, success } from "../utils/shellUtils";
 import { getCommentSyntax } from "./getCommetSyntax";
 import { createCommentChecker } from "./createCommentChecker";
 import { createInterface } from "readline";
+import { parseGitDiff } from "./parseGitDiff";
 
 export type CalculateDiffSizeOptions = {
   log?: (message: string) => void;
@@ -48,25 +47,21 @@ export async function calculateDiffSize({
       else resolve(stdout.trim());
     });
   });
-  const diff: string = await new Promise((resolve, reject) => {
-    const execArgs = ["git diff --no-color"];
-    execArgs.push(`${mergeBase}..${source}`);
-    if (ignoreWhitespace) execArgs.push("-w");
-    if (ignoreDeletion) execArgs.push("--diff-filter=ACMR");
-    if (ignoreFileGlobs.length)
-      execArgs.push(...ignoreFileGlobs.map((pattern) => `":!${pattern}"`));
-    exec(execArgs.join(" "), (err, stdout) => {
-      if (err) reject(err);
-      else resolve(stdout);
-    });
-  });
-  const files = gitDiffParser.parse(diff).filter((file) => {
-    if (file.isBinary) return false;
-    return true;
-  });
+  const execArgs = ["git diff --no-color"];
+  execArgs.push(`${mergeBase}..${source}`);
+  if (ignoreWhitespace) execArgs.push("-w");
+  if (ignoreDeletion) execArgs.push("--diff-filter=ACMR");
+  if (ignoreFileGlobs.length)
+    execArgs.push(...ignoreFileGlobs.map((pattern) => `":!${pattern}"`));
+  const gitDiffProc = exec(execArgs.join(" "));
+  if (!gitDiffProc.stdout) throw new Error("Failed to get git diff");
+  const parsedDiff = await parseGitDiff(
+    createInterface({ input: gitDiffProc.stdout })[Symbol.asyncIterator](),
+  );
 
   let diffs = 0;
-  for (const file of files) {
+  for (const file of parsedDiff) {
+    if (file.isBinary) continue;
     const oldFileCommentChecker = await (() => {
       if (!ignoreComment) return undefined;
       const ext = path.basename(file.oldPath).split(".").pop();
@@ -100,62 +95,52 @@ export async function calculateDiffSize({
     let insertion = 0;
     let deletion = 0;
     for (const hunk of file.hunks) {
-      if (verbose)
-        linesToPrint.push(
-          bold(
-            ignoreDeletion
-              ? `From line ${hunk.newStart} to ${hunk.newStart + hunk.newLines - 1}`
-              : `From line ${hunk.oldStart} to ${hunk.oldStart + hunk.oldLines - 1} ➡ From line ${hunk.newStart} to ${hunk.newStart + hunk.newLines - 1}`,
-          ),
-        );
-      for (const change of hunk.changes) {
+      if (verbose) linesToPrint.push(info(bold(hunk.header)));
+      for (const change of hunk.lines) {
         switch (change.type) {
-          case "delete":
+          case "-":
             if (ignoreDeletion) continue;
             break;
-          case "normal":
+          case " ":
             linesToPrint.push(dim(change.content));
             continue;
         }
         const content = change.content.trim();
-        if (!content) {
-          if (ignoreWhitespace) {
-            linesToPrint.push(change.content);
+        if (!content && ignoreWhitespace) {
+          linesToPrint.push(change.content);
+          continue;
+        }
+        if (change.type === "+") {
+          if (content && newFileCommentChecker?.(change.lineNo)) {
+            linesToPrint.push(dim(change.content));
             continue;
+          } else {
+            linesToPrint.push(success(change.content));
+            insertion++;
           }
         } else {
-          if (change.type === "insert") {
-            if (newFileCommentChecker?.(change.lineNumber)) {
-              linesToPrint.push(dim(change.content));
-              continue;
-            } else {
-              linesToPrint.push(success(change.content));
-              insertion++;
-            }
+          if (content && oldFileCommentChecker?.(change.lineNo)) {
+            linesToPrint.push(dim(change.content));
+            continue;
           } else {
-            if (oldFileCommentChecker?.(change.lineNumber)) {
-              linesToPrint.push(dim(change.content));
-              continue;
-            } else {
-              linesToPrint.push(error(change.content));
-              deletion++;
-            }
+            linesToPrint.push(error(change.content));
+            deletion++;
           }
         }
       }
-      diffs += insertion + deletion;
-      if (log && insertion + deletion) {
-        log(
-          info(
-            bold(
-              `📄 ${file.newPath}${deletion ? error(` -${deletion}`) : ""}${insertion ? success(` +${insertion}`) : ""}`,
-            ),
+    }
+    diffs += insertion + deletion;
+    if (log && insertion + deletion) {
+      log(
+        info(
+          bold(
+            `📄 ${file.newPath}${deletion ? error(` -${deletion}`) : ""}${insertion ? success(` +${insertion}`) : ""}`,
           ),
-        );
-        if (verbose) {
-          log(linesToPrint.join("\n"));
-          log("");
-        }
+        ),
+      );
+      if (verbose) {
+        log(linesToPrint.join("\n"));
+        log("");
       }
     }
   }

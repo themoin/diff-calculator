@@ -8,10 +8,12 @@
   "scripts": {
     "lint": "eslint .",
     "build:cli": "node build-cli.cjs",
+    "build:cli:debug": "DEBUG=true node build-cli.cjs",
     "build:action": "node build-action.cjs",
     "build": "pnpm run build:cli && pnpm run build:action",
     "link:cli": "cd dist/cli && npm link",
-    "apply:cli": "pnpm run build:cli && pnpm run link:cli"
+    "apply:cli": "pnpm run build:cli && pnpm run link:cli",
+    "apply:cli:debug": "pnpm run build:cli:debug && pnpm run link:cli"
   },
   "author": "haenah",
   "license": "MIT",
