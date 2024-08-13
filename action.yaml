@@ -32,3 +32,6 @@ outputs:
 runs:
   using: "node20"
   main: "action.js"
+branding:
+  icon: git-branch
+  color: green
