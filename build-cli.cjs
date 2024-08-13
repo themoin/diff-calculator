@@ -58,7 +58,7 @@ async function main() {
   writeFileSync("dist/cli/package.json", JSON.stringify(packageJson, null, 2));
   const readme = readFileSync("README.md", "utf-8").replace(
     /\{version\}/g,
-    packageJson.version,
+    `v${version}`,
   );
   writeFileSync("dist/cli/README.md", readme);
 }
