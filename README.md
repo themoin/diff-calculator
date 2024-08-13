@@ -17,6 +17,7 @@ It can be configured to ignore comments, deletions, and whitespaces, so you can 
 ## CLI
 
 CLI is available through npm, yarn and pnpm.
+
 <!-- You can also install it through homebrew. -->
 
 ### Installation
@@ -97,6 +98,7 @@ jobs:
 ```yaml
 jobs:
   label-pr-size:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -112,6 +114,8 @@ jobs:
           ignore-whitespace: true
           ignore-comment: true
       - name: Label PR size
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VALUE=${{ steps.get-pr-size.outputs.size }}
           if [ $VALUE -le 10 ]; then
@@ -120,21 +124,22 @@ jobs:
             LABEL="size/100"
           elif [ $VALUE -le 200 ]; then
             LABEL="size/200"
-          elif [ $VALUE -lt 300 ]; then
+          elif [ $VALUE -le 300 ]; then
             LABEL="size/300"
           else
             LABEL="size/300+"
           fi
-          # Check if the label prefixed with `size/` is already set
+          LABEL_EXISTS=$(gh label list --search $LABEL)
+          if [ -z "$LABEL_EXISTS" ]; then
+            echo "Creating label $LABEL"
+            gh label create $LABEL -c 000000
+          fi
           EXISTING=$(gh pr view ${{ github.event.number }} --json labels --jq ".labels[].name" | grep "^size/" || true)
-          # If the label is not set, just add the label
           if [ -z "$EXISTING" ]; then
             echo "Adding label $LABEL"
             gh pr edit ${{ github.event.number }} --add-label $LABEL
-          # If the label is already set to the calculated label, do nothing
           elif [ $EXISTING = $LABEL ]; then
             echo "Label is already set to $LABEL"
-          # If the label is set to another label, remove the existing label and add the calculated label
           else
             echo "Removing label $EXISTING and adding label $LABEL"
             gh pr edit ${{ github.event.number }} --remove-label $EXISTING
