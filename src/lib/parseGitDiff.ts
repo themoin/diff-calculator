@@ -120,8 +120,14 @@ async function parseFileHeader(
             fileDiffType = "D";
             break;
           case "i":
-            // dissimilarity index <number>
-            await scanner.scan();
+            switch (line[2]) {
+              case "f":
+                // next diff, so break
+                break loop;
+              default:
+                // dissimilarity index <number>
+                await scanner.scan();
+            }
         }
         break;
       case "c":
