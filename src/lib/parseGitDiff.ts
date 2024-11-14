@@ -55,17 +55,15 @@ class LineScanner {
 /**
  * @see https://git-scm.com/docs/git-diff
  */
-export async function parseGitDiff(
+export async function* parseGitDiff(
   lines: AsyncIterator<string>,
-): Promise<FileDiff[]> {
-  const fileDiffs: FileDiff[] = [];
+): AsyncIterable<FileDiff> {
   const scanner = new LineScanner(lines);
   while (true) {
     const parsed = await parseFileDiff(scanner);
     if (!parsed) break;
-    fileDiffs.push(parsed);
+    yield parsed;
   }
-  return fileDiffs;
 }
 
 async function parseFileDiff(scanner: LineScanner): Promise<FileDiff | null> {

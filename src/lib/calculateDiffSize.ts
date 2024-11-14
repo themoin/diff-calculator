@@ -55,12 +55,16 @@ export async function calculateDiffSize({
     execArgs.push(...ignoreFileGlobs.map((pattern) => `":!${pattern}"`));
   const gitDiffProc = exec(execArgs.join(" "));
   if (!gitDiffProc.stdout) throw new Error("Failed to get git diff");
-  const parsedDiff = await parseGitDiff(
+  gitDiffProc.stderr?.on("data", (data) => {
+    console.error(error(data.toString()));
+    process.exit(1);
+  });
+  const parsedDiffStream = parseGitDiff(
     createInterface({ input: gitDiffProc.stdout })[Symbol.asyncIterator](),
   );
 
   let diffs = 0;
-  for (const file of parsedDiff) {
+  for await (const file of parsedDiffStream) {
     if (file.isBinary) continue;
     const oldFileCommentChecker = await (() => {
       if (!ignoreComment) return undefined;
