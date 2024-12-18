@@ -6,7 +6,7 @@ type FileInfo = {
 
 type ContentInfo =
   | {
-      hunks: Hunk[];
+      hunks: AsyncIterable<Hunk>;
       isBinary: false;
     }
   | {
@@ -83,15 +83,19 @@ async function parseFileDiff(scanner: LineScanner): Promise<FileDiff | null> {
   };
   const isBinary = await parseBinary(scanner);
   if (isBinary) return { ...fileInfo, isBinary: true };
-  const hunks: Hunk[] = [];
-  if (await parseHunkPath(scanner)) {
-    while (true) {
-      const hunk = await parseHunk(scanner);
-      if (!hunk) break;
-      hunks.push(hunk);
-    }
-  }
-  return { ...fileInfo, hunks, isBinary: false };
+  return {
+    ...fileInfo,
+    isBinary: false,
+    hunks: (async function* () {
+      if (await parseHunkPath(scanner)) {
+        while (true) {
+          const hunk = await parseHunk(scanner);
+          if (!hunk) break;
+          yield hunk;
+        }
+      }
+    })(),
+  };
 }
 
 async function parseFileHeader(
