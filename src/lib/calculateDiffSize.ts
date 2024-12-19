@@ -98,7 +98,7 @@ export async function calculateDiffSize({
     const linesToPrint = [];
     let insertion = 0;
     let deletion = 0;
-    for (const hunk of file.hunks) {
+    for await (const hunk of file.hunks) {
       if (verbose) linesToPrint.push(info(bold(hunk.header)));
       for (const change of hunk.lines) {
         switch (change.type) {
